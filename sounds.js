@@ -23,6 +23,10 @@
   let fade = null;     // { timer, hush: [nodes], hushGain, bedGain, el } while a fade runs
   const EARLY_TAU_S = 0.30;
   const EARLY_STOP_S = 1.6;
+  // Bed level (script.js MUSIC_VOL). Once routed, WebKit ignores el.volume, so the level lives
+  // on bedGain and el.volume is held at 1 (Chromium would otherwise apply it twice).
+  const BED_VOL = 0.32;
+  let bedLevel = BED_VOL;
 
   // Fade the outgoing voice over ~40 ms on the audio clock before stopping it (no hard cut).
   const STOP_RAMP_S = 0.04;
@@ -144,20 +148,26 @@
       }
     }
     if (!bedGain) {
+      const v = Number(el.volume);
+      if (Number.isFinite(v) && v < 1) bedLevel = v; // carry the current (possibly faded) level
       bedGain = ctx.createGain();
-      bedGain.gain.value = 1;
+      bedGain.gain.value = bedLevel;
+      try { el.volume = 1; } catch {}
       bedSrc.connect(bedGain);
       bedGain.connect(ctx.destination);
     }
     return bedGain;
   }
 
+  // New bed gain after a fade. Starts at 0 and only comes back up to the bed level after the
+  // paused element has flushed, so the reset can't re-peak (the ~1.6 s tick in WebKit).
   function freshBedGain() {
     if (!bedSrc || !ctx) return;
     try { bedSrc.disconnect(); } catch {}
-    bedGain = null;
+    bedLevel = BED_VOL;
     bedGain = ctx.createGain();
-    bedGain.gain.value = 1;
+    bedGain.gain.value = 0;
+    try { bedGain.gain.setTargetAtTime(bedLevel, ctx.currentTime + 0.12, 0.03); } catch {}
     bedSrc.connect(bedGain);
     bedGain.connect(ctx.destination);
   }
@@ -181,11 +191,30 @@
     if (fade) return false;
     const mute = Boolean(opts.muted) || muted;
     const bedPlaying = Boolean(el && !el.paused);
-    if (mute || !audioCtx() || ctx.state !== "running") {
+    if (mute || !audioCtx() || ctx.state === "closed") {
       stopAll();
       if (el) resetBed(el);
       return true;
     }
+    if (ctx.state !== "running") {
+      // WebKit can hand back a suspended context: await resume(), keep the bed playing, then fade.
+      const pending = { pending: true, hush: [], hushGain: null, bedGain: null, el: null, timer: null };
+      fade = pending;
+      let resumed;
+      try { resumed = Promise.resolve(ctx.resume()); } catch { resumed = Promise.reject(); }
+      resumed.catch(() => {}).then(() => {
+        if (fade !== pending) return; // a new sit cancelled it
+        fade = null;
+        if (ctx.state === "running") startEarlyFade(el, bedPlaying && !el.paused);
+        else { stopAll(); if (el) resetBed(el); }
+      });
+      return true;
+    }
+    startEarlyFade(el, bedPlaying);
+    return true;
+  }
+
+  function startEarlyFade(el, bedPlaying) {
     timers.forEach((id) => clearTimeout(id));
     timers = [];
     const t = ctx.currentTime;
@@ -218,12 +247,14 @@
     const state = { hush, hushGain, bedGain: g, el: bedPlaying ? el : null, timer: null };
     state.timer = setTimeout(() => finishFade(state), Math.ceil(EARLY_STOP_S * 1000));
     fade = state;
-    return true;
   }
 
   function finishFade(state) {
     if (fade !== state) return;
     fade = null;
+    if (state.bedGain) {
+      try { state.bedGain.gain.cancelScheduledValues(0); state.bedGain.gain.value = 0; } catch {}
+    }
     if (state.el) resetBed(state.el);
     if (state.bedGain) freshBedGain();
     hardStop(state.hush);
@@ -312,6 +343,22 @@
       let v = muted || !enabled ? 0 : Math.max(0, Math.min(1, t));
       if (fade) v = Math.min(v, master.gain.value);
       master.gain.setTargetAtTime(v, audioCtx().currentTime, 0.08);
+    },
+    // Call on Begin, inside the user gesture: creates the context and resumes it there, so
+    // WebKit has it running before the first early end.
+    prime() {
+      const c = audioCtx();
+      if (c && c.state === "suspended") return Promise.resolve(c.resume()).catch(() => {});
+      return Promise.resolve();
+    },
+    // Bed level. Returns true when the bed is routed and the level went onto bedGain.
+    setBedVolume(el, v) {
+      if (!bedGain || !ctx) return false;
+      bedLevel = Math.max(0, Math.min(1, Number(v) || 0));
+      if (fade) return true;
+      try { if (el) el.volume = 1; } catch {}
+      try { bedGain.gain.setTargetAtTime(bedLevel, ctx.currentTime, 0.05); } catch {}
+      return true;
     },
     resume() {
       if (ctx && ctx.state === "suspended") ctx.resume().catch(() => {});

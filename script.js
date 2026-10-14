@@ -714,6 +714,14 @@
     }
   }
 
+  // Once the engine routes the bed through Web Audio, WebKit ignores .volume; the level goes on
+  // the bed gain instead.
+  function setBedVolume(v) {
+    const e = engine();
+    if (e && e.setBedVolume && e.setBedVolume(els.soundscape, v)) return;
+    els.soundscape.volume = v;
+  }
+
   function updateSoundscapeVolume() {
     // During the 1.6 s early fade, leave the level alone (no .volume reset, no setFade(1));
     // the next Begin cancels the fade and restores it here.
@@ -721,16 +729,16 @@
     if (fe && fe.isFading && fe.isFading()) return;
     const t = fadeFactor();
     if (!state.musicEnabled || state.muted || state.isOpen || !state.sessionActive) {
-      els.soundscape.volume = MUSIC_VOL;
+      setBedVolume(MUSIC_VOL);
     } else {
-      els.soundscape.volume = MUSIC_VOL * t;
+      setBedVolume(MUSIC_VOL * t);
     }
     const e = engine();
     if (e) e.setFade(state.musicEnabled && !state.muted ? t : 0);
   }
 
   function stopSoundscapeFade() {
-    els.soundscape.volume = MUSIC_VOL;
+    setBedVolume(MUSIC_VOL);
     const e = engine();
     if (e) e.setFade(state.musicEnabled && !state.muted ? 1 : 0);
   }
@@ -820,6 +828,7 @@
     keepButton(); // reserve its space (visibility:hidden) so Stop doesn't shift when it arms
     const eng = engine();
     if (eng && eng.cancelFade) eng.cancelFade();
+    if (eng && eng.prime) eng.prime(); // create + resume the AudioContext inside the Begin gesture
     pushSitState();
     track("session_start", {
       mode: state.type,
