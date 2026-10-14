@@ -1097,8 +1097,9 @@
   }
 
   function registerWorker() {
-    if (!("serviceWorker" in navigator)) return;
-    navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).catch(() => {});
+    if (typeof window.registerStillpointSW === "function") {
+      window.registerStillpointSW();
+    }
   }
 
   function init() {
