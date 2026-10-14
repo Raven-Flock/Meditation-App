@@ -1299,8 +1299,9 @@
   }
 
   function registerWorker() {
-    if (!("serviceWorker" in navigator)) return;
-    navigator.serviceWorker.register("./sw.js?v=29").catch(() => {});
+    if (typeof window.registerStillpointSW === "function") {
+      window.registerStillpointSW();
+    }
   }
 
   function init() {

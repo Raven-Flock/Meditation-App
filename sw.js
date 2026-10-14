@@ -8,6 +8,7 @@ const SHELL = [
   "./sounds.js",
   "./script.js",
   "./premium.js",
+  "./sw-update.js",
   "./manifest.json",
   "./favicon-32.png",
   "./icon-192.png",
