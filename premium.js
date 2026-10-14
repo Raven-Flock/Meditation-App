@@ -165,7 +165,7 @@
     const begin = document.getElementById("begin-btn");
     if (begin) begin.addEventListener("click", playStartBell);
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("./sw.js?v=27").catch(() => {});
+      navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).catch(() => {});
     }
   }
 

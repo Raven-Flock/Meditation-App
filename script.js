@@ -2,7 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "stillpoint-v1";
-  const CACHE_ID = "stillpoint-v27";
+  const CACHE_ID = "stillpoint-v28";
   const AUDIO_BY_MODE = {
     sit: "./audio/stillpoint-sit.mp3",
     box: "./audio/stillpoint-box.mp3",
@@ -1098,7 +1098,7 @@
 
   function registerWorker() {
     if (!("serviceWorker" in navigator)) return;
-    navigator.serviceWorker.register("./sw.js?v=27").catch(() => {});
+    navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).catch(() => {});
   }
 
   function init() {
