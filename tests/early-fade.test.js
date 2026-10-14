@@ -22,7 +22,7 @@ function param(value) {
 function load() {
   const log = { sources: [], gains: [], media: 0 };
   class FakeCtx {
-    constructor() { this.sampleRate = 8000; this.currentTime = 10; this.state = "running"; this.destination = { id: "dest" }; }
+    constructor() { log.ctx = this; this.sampleRate = 8000; this.currentTime = 10; this.state = "running"; this.destination = { id: "dest" }; }
     resume() { return Promise.resolve(); }
     node(extra) { return { connected: true, outs: [], connect(n) { this.outs.push(n); }, disconnect() { this.connected = false; this.outs = []; }, ...extra }; }
     createGain() { const g = this.node({ gain: param(1) }); log.gains.push(g); return g; }
@@ -72,7 +72,38 @@ test("file bed early end fades its own gain (not master), then pauses and resets
   assert.strictEqual(el.paused, true);
   assert.strictEqual(el.currentTime, 0);
   assert.strictEqual(S.isFading(), false);
-  assert.strictEqual(log.gains[log.gains.length - 1].gain.value, 1, "fresh gain at unity for the next sit");
+  const fresh = log.gains[log.gains.length - 1];
+  assert.notStrictEqual(fresh, bedGain, "fresh gain for the next sit");
+  assert.strictEqual(fresh.gain.value, 0, "fresh gain starts silent (no re-peak tick at reset)");
+  assert.deepStrictEqual(fresh.gain.calls.slice(-1), [["target", 0.32, 10.12, 0.03]], "then returns to the 0.32 bed level");
+});
+
+test("routed bed carries the 0.32 bed level on its gain, el.volume held at 1", () => {
+  const { S, log } = load();
+  S.setKind("soft");
+  const el = { ...fakeEl(), volume: 0.32 };
+  S.fadeOutEarly(el);
+  const bedGain = log.gains[log.gains.length - 1];
+  assert.deepStrictEqual(bedGain.gain.calls.slice(-2, -1), [["set", 0.32, 10]], "fade starts from 0.32, not unity");
+  assert.strictEqual(el.volume, 1);
+});
+
+test("suspended context (WebKit): awaits resume(), bed keeps playing, then fades", async () => {
+  const { S, log } = load();
+  S.setKind("soft");
+  S.prime();
+  const el = fakeEl();
+  log.ctx.state = "suspended";
+  log.ctx.resume = function () { return Promise.resolve().then(() => { this.state = "running"; }); };
+  assert.strictEqual(S.fadeOutEarly(el), true);
+  assert.strictEqual(el.paused, false, "no hard cut while resuming");
+  assert.strictEqual(S.isFading(), true, "re-entry guard holds while resuming");
+  assert.strictEqual(log.media, 0, "not routed until the context runs");
+  await wait(0);
+  const bedGain = log.gains[log.gains.length - 1];
+  assert.strictEqual(log.media, 1);
+  assert.deepStrictEqual(bedGain.gain.calls.slice(-1), [["target", 0, 10, 0.3]]);
+  assert.strictEqual(el.paused, false);
 });
 
 test("re-entry guard: a second early end during a fade does nothing", () => {
@@ -143,7 +174,9 @@ test("sound switch / mute during the early fade leaves the level alone", () => {
   const js = fs.readFileSync(path.join(__dirname, "..", "script.js"), "utf8");
   const m = js.match(/function updateSoundscapeVolume\(\) \{[\s\S]*?\n  \}\n/);
   assert.ok(m, "updateSoundscapeVolume found");
-  const run = new Function("els", "engine", "state", "fadeFactor", "MUSIC_VOL", m[0] + "\nupdateSoundscapeVolume();");
+  const sb = js.match(/function setBedVolume\(v\) \{[\s\S]*?\n  \}\n/);
+  assert.ok(sb, "setBedVolume found");
+  const run = new Function("els", "engine", "state", "fadeFactor", "MUSIC_VOL", sb[0] + m[0] + "\nupdateSoundscapeVolume();");
   const go = (fading) => {
     const sets = [];
     const fades = [];
