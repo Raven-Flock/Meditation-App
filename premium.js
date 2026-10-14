@@ -164,8 +164,8 @@
     });
     const begin = document.getElementById("begin-btn");
     if (begin) begin.addEventListener("click", playStartBell);
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("./sw.js?v=27").catch(() => {});
+    if (typeof window.registerStillpointSW === "function") {
+      window.registerStillpointSW();
     }
   }
 

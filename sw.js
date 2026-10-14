@@ -1,4 +1,4 @@
-const CACHE = "stillpoint-v27";
+const CACHE = "stillpoint-v28";
 const SHELL = [
   "./",
   "./index.html",
@@ -8,6 +8,7 @@ const SHELL = [
   "./sounds.js",
   "./script.js",
   "./premium.js",
+  "./sw-update.js",
   "./manifest.json",
   "./favicon-32.png",
   "./icon-192.png",
