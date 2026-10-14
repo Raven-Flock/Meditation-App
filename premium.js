@@ -67,6 +67,8 @@
       applying = false;
     }
     if (rawSetFade) rawSetFade(clamp01(lastFade * userScale));
+    const engine = window.StillpointSound;
+    if (engine && typeof engine.setBedScale === "function") engine.setBedScale(userScale);
   }
 
   function wrapAudioVolume() {
@@ -173,6 +175,8 @@
     wrapAudioVolume();
     wrapSynthFade();
     restorePrefs();
+    const engine = window.StillpointSound;
+    if (engine && typeof engine.setBedScale === "function") engine.setBedScale(userScale);
     applyScale();
     relabelHush();
     bind();
