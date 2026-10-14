@@ -363,6 +363,11 @@
       try { bedGain.gain.setTargetAtTime(bedTarget(), ctx.currentTime, 0.05); } catch {}
       return true;
     },
+    // True once the bed plays through bedGain; premium.js then keeps el.volume at 1 so only the
+    // gain carries the slider scale (Chromium still honours el.volume on a routed element).
+    isBedRouted() {
+      return !!bedGain;
+    },
     // Volume slider scale (0..1). Applied live to the routed bed gain (WebKit ignores el.volume).
     setBedScale(s) {
       const n = Number(s);
