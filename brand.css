@@ -108,7 +108,7 @@ a.primary-btn {
 .sound-chip-btn {
   min-height: 40px;
   padding: 0 0.9rem;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-ui);
   border-radius: 999px;
   background: var(--surface);
   color: var(--mist);
@@ -117,7 +117,7 @@ a.primary-btn {
 }
 
 .sound-chip-btn:hover {
-  border-color: var(--line-strong);
+  border-color: var(--line-ui-strong);
   color: var(--gold-bright);
 }
 
@@ -245,3 +245,8 @@ a.primary-btn {
   object-fit: contain;
   background: transparent;
 }
+
+/* P1: 44 px hit area on sound chips, look unchanged (Visual Polish) */
+.sound-chip-btn { position: relative; }
+.sound-chip-btn::after { content: ""; position: absolute; inset: -5px 0; }
+.sound-row-session { row-gap: .65rem; }

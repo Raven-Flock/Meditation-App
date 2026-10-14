@@ -2,11 +2,7 @@
   "use strict";
 
   const VOL = {
-    white: 0.20,
-    rain: 0.22,
-    fall: 0.26,
-    shore: 0.2,
-    wild: 0.16
+    white: 0.20
   };
 
   const FILE_KINDS = new Set(["soft", "shore", "wild", "rain", "fall"]);
@@ -21,6 +17,12 @@
   let running = false;
   let voiceOut = null;
   let brownCache = null;
+  // Early-end fade (Sound Design spec): each layer fades on its own gain, never master.
+  let bedSrc = null;   // MediaElementSource for the <audio> bed (created on first early end)
+  let bedGain = null;  // per-layer gain for the file bed (music bed / nature chips)
+  let fade = null;     // { timer, hush: [nodes], hushGain, bedGain, el } while a fade runs
+  const EARLY_TAU_S = 0.30;
+  const EARLY_STOP_S = 1.6;
 
   // Fade the outgoing voice over ~40 ms on the audio clock before stopping it (no hard cut).
   const STOP_RAMP_S = 0.04;
@@ -130,6 +132,123 @@
     setTimeout(() => hardStop(old), Math.ceil((STOP_RAMP_S + 0.08) * 1000));
   }
 
+  // Route the file bed through Web Audio so its fade works on iOS (which ignores .volume).
+  // Lazy: only the first early end routes it; after that the element always plays via bedGain.
+  function routeBed(el) {
+    if (!el || !audioCtx()) return null;
+    if (!bedSrc) {
+      try {
+        bedSrc = ctx.createMediaElementSource(el);
+      } catch {
+        return null;
+      }
+    }
+    if (!bedGain) {
+      bedGain = ctx.createGain();
+      bedGain.gain.value = 1;
+      bedSrc.connect(bedGain);
+      bedGain.connect(ctx.destination);
+    }
+    return bedGain;
+  }
+
+  function freshBedGain() {
+    if (!bedSrc || !ctx) return;
+    try { bedSrc.disconnect(); } catch {}
+    bedGain = null;
+    bedGain = ctx.createGain();
+    bedGain.gain.value = 1;
+    bedSrc.connect(bedGain);
+    bedGain.connect(ctx.destination);
+  }
+
+  function fadeParam(g, t, tau) {
+    g.gain.cancelScheduledValues(t);
+    g.gain.setValueAtTime(g.gain.value, t); // no cancelAndHold (Safari)
+    g.gain.setTargetAtTime(0, t, tau);
+  }
+
+  function resetBed(el) {
+    try {
+      el.pause();
+      el.currentTime = 0;
+    } catch {}
+  }
+
+  // Early end: every active layer fades with tau 0.30 s and stops at +1.6 s.
+  // Returns false when a fade is already running (re-entry guard).
+  function fadeOutEarly(el, opts = {}) {
+    if (fade) return false;
+    const mute = Boolean(opts.muted) || muted;
+    const bedPlaying = Boolean(el && !el.paused);
+    if (mute || !audioCtx() || ctx.state !== "running") {
+      stopAll();
+      if (el) resetBed(el);
+      return true;
+    }
+    timers.forEach((id) => clearTimeout(id));
+    timers = [];
+    const t = ctx.currentTime;
+    const hush = nodes;
+    const hushGain = voiceOut;
+    nodes = [];
+    voiceOut = null;
+    running = false;
+    if (hushGain && hush.length) {
+      try { fadeParam(hushGain, t, EARLY_TAU_S); } catch {}
+      hush.forEach((node) => {
+        if (!node.stop) return;
+        try {
+          node.onended = () => hardStop(hush);
+          node.stop(t + EARLY_STOP_S);
+        } catch {}
+      });
+    } else if (hush.length) {
+      hardStop(hush);
+    }
+    let g = null;
+    if (bedPlaying) {
+      g = routeBed(el);
+      if (g) {
+        try { fadeParam(g, t, EARLY_TAU_S); } catch {}
+      } else {
+        resetBed(el);
+      }
+    }
+    const state = { hush, hushGain, bedGain: g, el: bedPlaying ? el : null, timer: null };
+    state.timer = setTimeout(() => finishFade(state), Math.ceil(EARLY_STOP_S * 1000));
+    fade = state;
+    return true;
+  }
+
+  function finishFade(state) {
+    if (fade !== state) return;
+    fade = null;
+    if (state.el) resetBed(state.el);
+    if (state.bedGain) freshBedGain();
+    hardStop(state.hush);
+  }
+
+  // A new sit while a fade runs: hard-stop the old sources with a 40 ms ramp, fresh gains.
+  function cancelFade() {
+    const state = fade;
+    if (!state) return;
+    fade = null;
+    clearTimeout(state.timer);
+    const t = ctx ? ctx.currentTime : 0;
+    if (state.hushGain && ctx) {
+      try { fadeParam(state.hushGain, t, 0.01); } catch {}
+      state.hush.forEach((node) => {
+        try { if (node.stop) node.stop(t + STOP_RAMP_S); } catch {}
+      });
+      setTimeout(() => hardStop(state.hush), Math.ceil((STOP_RAMP_S + 0.08) * 1000));
+    } else {
+      hardStop(state.hush);
+    }
+    if (state.el) resetBed(state.el);
+    if (state.bedGain) freshBedGain();
+  }
+
   function startWhite() {
     audioCtx();
     const src = track(sourceFrom(brownBuffer(20)));
@@ -144,7 +263,8 @@
 
   function setOutput(vol, mute) {
     if (!master) return;
-    const next = mute ? 0 : Math.max(0, Math.min(1, vol));
+    let next = mute ? 0 : Math.max(0, Math.min(1, vol));
+    if (fade) next = Math.min(next, master.gain.value); // never raise during the early fade
     master.gain.setTargetAtTime(next, audioCtx().currentTime, 0.05);
   }
 
@@ -155,6 +275,7 @@
       return;
     }
     audioCtx();
+    cancelFade();
     stopAll();
     running = true;
     if (kind === "white") startWhite();
@@ -166,6 +287,9 @@
     kinds: ["soft", "white", "rain", "fall", "shore", "wild"],
     start,
     stop: stopAll,
+    fadeOutEarly,
+    cancelFade,
+    isFading() { return Boolean(fade); },
     setKind(next) {
       if (next === kind && running) return;
       kind = next;
@@ -185,7 +309,8 @@
     },
     setFade(t) {
       if (!master) return;
-      const v = muted || !enabled ? 0 : Math.max(0, Math.min(1, t));
+      let v = muted || !enabled ? 0 : Math.max(0, Math.min(1, t));
+      if (fade) v = Math.min(v, master.gain.value);
       master.gain.setTargetAtTime(v, audioCtx().currentTime, 0.08);
     },
     resume() {

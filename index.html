@@ -16,10 +16,10 @@
   <link rel="icon" href="./icon-192.png" type="image/png" sizes="192x192">
   <link rel="apple-touch-icon" href="./apple-touch-icon.png" sizes="180x180">
   <link rel="preload" href="./fonts/fraunces-latin-var.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="./style.css?v=29">
-  <link rel="stylesheet" href="./brand.css?v=29">
-  <link rel="stylesheet" href="./premium.css?v=29">
-  <link rel="stylesheet" href="./fonts.css?v=29">
+  <link rel="stylesheet" href="./style.css?v=30">
+  <link rel="stylesheet" href="./brand.css?v=30">
+  <link rel="stylesheet" href="./premium.css?v=30">
+  <link rel="stylesheet" href="./fonts.css?v=30">
 </head>
 <body>
   <a class="skip-link" href="#app">Skip to content</a>
@@ -115,10 +115,11 @@
         </fieldset>
         <button type="button" class="primary-btn" id="begin-btn">Begin</button>
         <dl class="home-stats" aria-label="Your practice">
-          <div><dt>Streak</dt><dd id="stat-streak">0 days</dd></div>
+          <div><dt>Days sat</dt><dd id="stat-streak">0 days</dd></div>
           <div><dt>Total</dt><dd id="stat-total">0 min</dd></div>
           <div><dt>Sits</dt><dd id="stat-count">0</dd></div>
         </dl>
+        <p class="home-run" id="stat-run" hidden></p>
       </section>
       <section id="view-session" class="view view-session" data-view="session" hidden>
         <p class="session-kicker" id="session-kicker">Timed sit</p>
@@ -148,7 +149,7 @@
         <div class="session-controls">
           <button type="button" class="ghost-btn" id="pause-btn" aria-pressed="false">Pause</button>
           <button type="button" class="ghost-btn" id="audio-btn" aria-pressed="true">Soundscape on</button>
-          <button type="button" class="ghost-btn danger" id="stop-btn">Stop</button>
+          <span class="stop-wrap"><button type="button" class="ghost-btn stop-btn" id="stop-btn">Stop</button></span>
         </div>
       </section>
       <section id="view-complete" class="view view-complete" data-view="complete" hidden>
@@ -159,7 +160,7 @@
         <button type="button" class="primary-btn" id="home-btn">Return home</button>
         <button type="button" class="text-btn share-btn" id="share-btn" hidden>Share Stillpoint</button>
         <p class="share-status" id="share-status" role="status" aria-live="polite"></p>
-        <script src="./share.js?v=29" defer></script>
+        <script src="./share.js?v=30" defer></script>
         <a class="text-btn tip-btn tip-btn-block" href="https://www.buymeacoffee.com/nrsteward" target="_blank" rel="noopener noreferrer">Leave a tip</a>
       </section>
     </main>
@@ -177,7 +178,7 @@
         <button type="button" class="icon-btn" id="history-close" aria-label="Close history">&times;</button>
       </div>
       <dl class="history-summary">
-        <div><dt>Current streak</dt><dd id="hist-streak">0 days</dd></div>
+        <div><dt>Days sat</dt><dd id="hist-streak">0 days</dd></div>
         <div><dt>Total minutes</dt><dd id="hist-total">0</dd></div>
       </dl>
       <div class="week-card" id="week-card" aria-label="This week">
@@ -213,8 +214,9 @@
     </div>
   </div>
   <audio id="soundscape" src="./audio/stillpoint-sit.mp3" loop preload="none"></audio>
-  <script src="./sounds.js?v=29" defer></script>
-  <script src="./script.js?v=29" defer></script>
-  <script src="./premium.js?v=29" defer></script>
+  <script src="./sounds.js?v=30" defer></script>
+  <script src="./sw-update.js?v=30" defer></script>
+  <script src="./script.js?v=30" defer></script>
+  <script src="./premium.js?v=30" defer></script>
 </body>
 </html>

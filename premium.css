@@ -60,9 +60,16 @@ body.is-session .bed-vol {
 }
 .bed-volume {
   flex: 1;
-  accent-color: #c9b8ff;
+  accent-color: var(--gold);
   height: 1.4rem;
 }
+/* P1: slider track >= 3:1 (Visual Polish) */
+.bed-volume { -webkit-appearance: none; appearance: none; background: transparent; min-height: 44px; }
+.bed-volume::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--line-ui); }
+.bed-volume::-moz-range-track { height: 4px; border-radius: 2px; background: var(--line-ui); }
+.bed-volume::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--gold); }
+.bed-volume::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; margin-top: -8px; border-radius: 50%; background: var(--gold-bright); border: 2px solid #080a09; }
+.bed-volume::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--gold-bright); border: 2px solid #080a09; }
 
 body.is-session .tip-btn-icon,
 body.is-session .topbar-more,

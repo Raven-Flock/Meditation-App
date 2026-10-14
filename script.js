@@ -2,7 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "stillpoint-v1";
-  const CACHE_ID = "stillpoint-v29";
+  const CACHE_ID = "stillpoint-v30";
   const AUDIO_BY_MODE = {
     sit: "./audio/stillpoint-sit.mp3",
     box: "./audio/stillpoint-box.mp3",
@@ -23,10 +23,10 @@
 
   const BADGE_DEFS = [
     { id: "first-sit", label: "First sit", desc: "Complete your first practice" },
-    { id: "streak-3", label: "3-day streak", desc: "Practice three days in a row" },
-    { id: "streak-7", label: "7-day streak", desc: "A full week of consecutive days" },
+    { id: "streak-3", label: "3-day streak", desc: "Sit three days in a row" },
+    { id: "streak-7", label: "7-day streak", desc: "Sit seven days in a row" },
     { id: "minutes-60", label: "60 minutes", desc: "Sixty minutes total practiced" },
-    { id: "week-sits-7", label: "Busy week", desc: "Seven sits in one Mon–Sun week" }
+    { id: "week-sits-7", label: "Seven sits this week", desc: "Seven sits in one Mon–Sun week" }
   ];
 
   const TYPES = {
@@ -87,6 +87,7 @@
     },
     stats: {
       streak: document.getElementById("stat-streak"),
+      run: document.getElementById("stat-run"),
       total: document.getElementById("stat-total"),
       count: document.getElementById("stat-count")
     },
@@ -142,8 +143,12 @@
     calYear: new Date().getFullYear(),
     calMonth: new Date().getMonth(),
     selectedDay: todayKey(),
-    sessionMeta: null
+    sessionMeta: null,
+    confirmTimer: null,
+    sitHistory: false,
+    ignorePop: false
   };
+  const CONFIRM_MS = 4000;
 
   function defaultStore() {
     return {
@@ -237,7 +242,8 @@
   }
 
   function computeStreak(history) {
-    const days = new Set(history.filter((item) => item.completed).map((item) => item.day));
+    // Every logged sit counts (a timed sit ended early still counts toward days sat).
+    const days = new Set(history.map((item) => item.day));
     if (!days.size) return 0;
     const cursor = new Date();
     let key = todayKey(cursor);
@@ -253,6 +259,15 @@
       key = todayKey(cursor);
     }
     return streak;
+  }
+
+  function daysSat(history) {
+    return new Set(history.map((item) => item.day)).size;
+  }
+
+  // Calm framing: only "N days in a row" when N >= 2; never "0 days".
+  function runText(streak) {
+    return streak >= 2 ? `${streak} days in a row` : "";
   }
 
   function totalMinutes(history) {
@@ -514,14 +529,20 @@
       const li = document.createElement("li");
       const on = unlocked.has(def.id);
       li.className = on ? "badge is-unlocked" : "badge is-locked";
-      li.title = def.desc;
       const name = document.createElement("span");
       name.className = "badge-name";
       name.textContent = def.label;
+      const desc = document.createElement("span");
+      desc.className = "badge-desc";
+      desc.textContent = def.desc;
+      const text = document.createElement("span");
+      text.className = "badge-text";
+      text.append(name, desc);
       const mark = document.createElement("span");
       mark.className = "badge-mark";
+      mark.setAttribute("aria-hidden", "true");
       mark.textContent = on ? "✦" : "·";
-      li.append(mark, name);
+      li.append(mark, text);
       els.badgesList.append(li);
     });
   }
@@ -604,7 +625,12 @@
     const streak = computeStreak(history);
     const total = totalMinutes(history);
     const week = weekStats(history);
-    els.stats.streak.textContent = streak === 1 ? "1 day" : `${streak} days`;
+    const days = daysSat(history);
+    els.stats.streak.textContent = days === 1 ? "1 day" : `${days} days`;
+    if (els.stats.run) {
+      els.stats.run.textContent = runText(streak);
+      els.stats.run.hidden = !els.stats.run.textContent;
+    }
     els.stats.total.textContent = `${total} min`;
     els.stats.count.textContent = String(history.length);
     els.hist.streak.textContent = els.stats.streak.textContent;
@@ -689,6 +715,10 @@
   }
 
   function updateSoundscapeVolume() {
+    // During the 1.6 s early fade, leave the level alone (no .volume reset, no setFade(1));
+    // the next Begin cancels the fade and restores it here.
+    const fe = engine();
+    if (fe && fe.isFading && fe.isFading()) return;
     const t = fadeFactor();
     if (!state.musicEnabled || state.muted || state.isOpen || !state.sessionActive) {
       els.soundscape.volume = MUSIC_VOL;
@@ -786,6 +816,11 @@
     state.hiddenWhileRunning = false;
     state.sessionActive = true;
     state.bellArmed = true;
+    resetStopConfirm();
+    keepButton(); // reserve its space (visibility:hidden) so Stop doesn't shift when it arms
+    const eng = engine();
+    if (eng && eng.cancelFade) eng.cancelFade();
+    pushSitState();
     track("session_start", {
       mode: state.type,
       duration_kind: meta.duration_kind,
@@ -839,17 +874,32 @@
     els.hint.textContent = "Follow the light";
   }
 
+  // Early end: fade every active layer (Sound Design: tau 0.30 s, stop at +1.6 s). Muted: no fade.
+  // Starts from the current level: no stopSoundscapeFade() here, or an early end inside the
+  // natural 30 s fade swells ~8 dB first. Callers clear the timers; the next Begin restores
+  // .volume and setFade(1) via updateSoundscapeVolume().
+  function endAudioEarly() {
+    const e = engine();
+    if (e && e.fadeOutEarly) {
+      e.fadeOutEarly(els.soundscape, { muted: state.muted || !state.musicEnabled });
+    } else {
+      pauseAudio(true);
+    }
+  }
+
   function stopSession() {
+    if (state.status !== "running" && state.status !== "paused") return;
+    resetStopConfirm();
+    popSitState();
     const elapsed = state.elapsed;
-    // Open sits lasting ≥15s end via complete path: chime, completed:true, streak-eligible.
+    // Open sits lasting ≥15s end via complete path (completed:true); the bed fades, no hard cut.
     if (state.isOpen && elapsed >= MIN_LOG_SECONDS) {
-      completeSession(true);
+      completeSession(true, { userStop: true });
       return;
     }
     clearTimers();
     state.sessionActive = false;
-    stopSoundscapeFade();
-    pauseAudio(true);
+    endAudioEarly();
     releaseWakeLock();
     document.body.classList.remove(
       "is-running", "is-sit", "is-box", "is-wind",
@@ -858,9 +908,152 @@
     state.status = "idle";
     setView("home");
     resetToConfiguredTime();
-    // Timed early-stop: log incomplete (not streak-eligible). Short Open discards.
+    // Timed early stop: logged as stopped early; it still counts toward days sat. Short sits discard.
     if (!state.isOpen && elapsed >= MIN_LOG_SECONDS) logSession(false, elapsed);
     renderStats();
+    els.begin.focus();
+  }
+
+  // Inline two-tap Stop: "End sit?" + "Keep sitting", reverts after 4 s. No dialog.
+  function stopConfirmOpen() {
+    return els.stop.dataset.confirm === "1";
+  }
+
+  function announce(text) {
+    const live = liveRegion();
+    live.textContent = "";
+    window.setTimeout(() => { live.textContent = text; }, 30);
+  }
+
+  function liveRegion() {
+    let live = document.getElementById("status-live");
+    if (!live) {
+      live = document.createElement("p");
+      live.id = "status-live";
+      live.className = "sr-only";
+      live.setAttribute("role", "status");
+      live.setAttribute("aria-live", "polite");
+      live.setAttribute("aria-atomic", "true");
+      document.body.append(live);
+    }
+    return live;
+  }
+
+  function keepButton() {
+    let keep = document.getElementById("keep-btn");
+    if (!keep) {
+      keep = document.createElement("button");
+      keep.type = "button";
+      keep.id = "keep-btn";
+      keep.className = "ghost-btn keep-btn";
+      keep.textContent = "Keep sitting";
+      keep.hidden = true;
+      keep.addEventListener("click", () => {
+        resetStopConfirm();
+        els.stop.focus();
+        announce("Still sitting.");
+      });
+      els.stop.after(keep);
+    }
+    return keep;
+  }
+
+  function resetStopConfirm() {
+    if (state.confirmTimer) {
+      clearTimeout(state.confirmTimer);
+      state.confirmTimer = null;
+    }
+    if (!els.stop) return;
+    const wasOpen = stopConfirmOpen();
+    delete els.stop.dataset.confirm;
+    els.stop.textContent = "Stop";
+    delete els.stop.dataset.armed;
+    const keep = document.getElementById("keep-btn");
+    if (keep) {
+      if (wasOpen && document.activeElement === keep) els.stop.focus();
+      keep.hidden = true;
+    }
+  }
+
+  function requestStop() {
+    if (state.status !== "running" && state.status !== "paused") return;
+    if (stopConfirmOpen() || state.elapsed < MIN_LOG_SECONDS) {
+      stopSession();
+      return;
+    }
+    els.stop.dataset.confirm = "1";
+    els.stop.textContent = "End sit?";
+    els.stop.dataset.armed = "true";
+    keepButton().hidden = false;
+    announce("End sit? Tap again to end, or Keep sitting.");
+    state.confirmTimer = window.setTimeout(resetStopConfirm, CONFIRM_MS);
+  }
+
+  // Back mid-sit shows the same inline confirm (founder default). One history entry per sit.
+  function pushSitState() {
+    if (state.sitHistory || !window.history || !history.pushState) return;
+    try {
+      history.pushState({ stillpointSit: true }, "");
+      state.sitHistory = true;
+    } catch {}
+  }
+
+  function popSitState() {
+    if (!state.sitHistory) return;
+    state.sitHistory = false;
+    if (history.state && history.state.stillpointSit) {
+      state.ignorePop = true;
+      history.back();
+    }
+  }
+
+  function onPopState() {
+    if (state.ignorePop) {
+      state.ignorePop = false;
+      return;
+    }
+    if (!state.sitHistory) return;
+    state.sitHistory = false;
+    if (state.status !== "running" && state.status !== "paused") return;
+    if (stopConfirmOpen() || state.elapsed < MIN_LOG_SECONDS) {
+      stopSession();
+      return;
+    }
+    pushSitState();
+    requestStop();
+    els.stop.focus();
+  }
+
+  // Tab close / reload mid-sit: log the partial sit silently (no beforeunload).
+  function onPageHide() {
+    releaseWakeLock();
+    if (state.status !== "running" && state.status !== "paused") return;
+    const elapsed = state.elapsed;
+    if (elapsed >= MIN_LOG_SECONDS) logSession(state.isOpen, elapsed);
+    clearTimers();
+    resetStopConfirm();
+    state.sessionActive = false;
+    state.sitHistory = false;
+    pauseAudio(true);
+    document.body.classList.remove(
+      "is-running", "is-sit", "is-box", "is-wind",
+      "phase-inhale", "phase-exhale", "phase-hold-in", "phase-hold-out"
+    );
+    state.status = "idle";
+    setView("home");
+    resetToConfiguredTime();
+    renderStats();
+  }
+
+  // SC 4.1.3: move focus to the completion title and announce it politely.
+  function announceComplete() {
+    const title = els.complete.title;
+    if (!title) return;
+    title.setAttribute("tabindex", "-1");
+    title.focus({ preventScroll: false });
+    const text = [title.textContent, els.complete.meta.textContent, els.complete.streak.textContent]
+      .filter(Boolean).join(". ");
+    announce(text);
   }
 
   function logSession(completed, elapsedSeconds, natural) {
@@ -889,13 +1082,19 @@
     return next;
   }
 
-  function completeSession(natural) {
+  function completeSession(natural, { userStop = false } = {}) {
     if (state.status !== "running" && state.status !== "paused") return;
     const elapsed = state.elapsed;
+    resetStopConfirm();
+    if (!userStop) popSitState();
     clearTimers();
     state.sessionActive = false;
-    stopSoundscapeFade();
-    pauseAudio(true);
+    if (userStop) {
+      endAudioEarly();
+    } else {
+      stopSoundscapeFade();
+      pauseAudio(true);
+    }
     releaseWakeLock();
     state.status = "complete";
     document.body.classList.remove("is-running");
@@ -910,11 +1109,14 @@
     const streak = computeStreak(store.history);
     els.complete.title.textContent = natural ? "Well held." : "A pause, then rest.";
     els.complete.meta.textContent = `${minutes} min \u00b7 ${TYPES[state.type].label}`;
-    els.complete.streak.textContent = streak
-      ? `Streak: ${streak} day${streak === 1 ? "" : "s"} \u00b7 ${totalMinutes(store.history)} minutes all told.`
-      : "The first sitting is the one that matters.";
+    els.complete.streak.textContent = streak >= 2
+      ? `${runText(streak)} \u00b7 ${totalMinutes(store.history)} minutes all told.`
+      : (store.history.length > 1
+        ? `${totalMinutes(store.history)} minutes all told.`
+        : "The first sitting is the one that matters.");
     setView("complete");
     renderStats();
+    announceComplete();
   }
 
   function goHome() {
@@ -932,7 +1134,8 @@
     saveStore({ musicEnabled: state.musicEnabled });
     syncMusicButtons();
     if (!state.musicEnabled) {
-      pauseAudio(false);
+      const e = engine();
+      if (!(e && e.isFading && e.isFading())) pauseAudio(false); // let the early fade finish
       return;
     }
     if (state.sessionActive) {
@@ -996,7 +1199,8 @@
       if (state.status === "running") pauseSession();
       else if (state.status === "paused") resumeSession();
     });
-    els.stop.addEventListener("click", () => stopSession());
+    els.stop.addEventListener("click", () => requestStop());
+    window.addEventListener("popstate", onPopState);
     els.audioBtn.addEventListener("click", toggleMusic);
     els.mute.addEventListener("click", toggleMute);
     els.home.addEventListener("click", goHome);
@@ -1039,9 +1243,7 @@
       });
     }
     document.addEventListener("visibilitychange", onVisibility);
-    window.addEventListener("pagehide", () => {
-      releaseWakeLock();
-    });
+    window.addEventListener("pagehide", onPageHide);
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && !els.historySheet.hidden) {
         closeHistory();
@@ -1097,8 +1299,9 @@
   }
 
   function registerWorker() {
-    if (!("serviceWorker" in navigator)) return;
-    navigator.serviceWorker.register("./sw.js?v=29").catch(() => {});
+    if (typeof window.registerStillpointSW === "function") {
+      window.registerStillpointSW();
+    }
   }
 
   function init() {
