@@ -7,13 +7,15 @@
   --surface-solid: #121614;
   --line: rgba(212, 196, 158, 0.16);
   --line-strong: rgba(212, 196, 158, 0.32);
+  --line-ui: #857d68;         /* interactive outlines (SC 1.4.11 >= 3:1) */
+  --line-ui-strong: #a69878;  /* hover / pressed outline */
   --gold: #d4c49e;
   --gold-bright: #f0e4c4;
-  --gold-dim: #9a8b6a;
+  --gold-dim: #b0a17f;
   --sage: #8aa090;
   --mist: #c5cec6;
   --ink: #e8ece7;
-  --muted: #8b958c;
+  --muted: #a0aaa1;
   --danger: #d4a090;
   --orb: #e8d5a3;
   --focus: #f0e4c4;
@@ -942,20 +944,29 @@ body.is-session .home-hero,
   color: var(--gold);
 }
 
+@keyframes breathe-fade {
+  0%, 100% { opacity: .62; filter: brightness(.82); }
+  40%, 55% { opacity: 1; filter: brightness(1.08); }
+}
+
+/* Reduced motion: the breathing guide becomes a fade on the same timing (no transform). */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .orb { transform: none !important; opacity: .62; filter: brightness(.82); }
+  body.is-running .orb,
+  body.is-sit .orb { animation: breathe-fade 10s ease-in-out infinite !important; }
+  body.is-box .orb, body.is-wind .orb {
     animation: none !important;
-    transition: none !important;
+    transition: opacity 4s linear, filter 4s linear !important;
   }
-  .orb {
-    transform: none !important;
-    filter: none !important;
-  }
-  .glow {
-    opacity: 0.3;
-  }
+  body.is-box.phase-inhale .orb, body.is-box.phase-hold-in .orb,
+  body.is-wind.phase-inhale .orb, body.is-wind.phase-hold-in .orb { opacity: 1; filter: brightness(1.08); }
+  body.is-box.phase-exhale .orb, body.is-box.phase-hold-out .orb,
+  body.is-wind.phase-exhale .orb { opacity: .62; filter: brightness(.82); }
+  body.is-wind.phase-hold-in .orb { transition-duration: 7s !important; }
+  body.is-wind.phase-exhale .orb { transition-duration: 8s !important; }
+  .orb-ring { opacity: .6; }
+  .glow { opacity: .3; }
 }
 
 
@@ -999,3 +1010,52 @@ body.is-session .home-hero,
 .view-complete #home-btn {
   margin-top: 0.35rem;
 }
+
+
+/* P1 calm session + a11y — Visual Polish spec STILLPOINT-P1-VISUAL-v0.1 */
+.text-btn,
+.ghost-btn,
+.icon-btn,
+.type-card,
+.chip span,
+.custom-mins input {
+  border-color: var(--line-ui);
+}
+
+.type-card:hover {
+  border-color: var(--line-ui-strong);
+}
+
+.session-controls { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; }
+#stop-btn,
+#keep-btn {
+  min-height: 44px; padding: .45rem 1.1rem; border-radius: 999px;
+  border: 1px solid var(--line-ui); color: var(--mist);
+  background: rgba(8, 10, 9, .35);
+}
+#stop-btn { min-width: 7.5rem; }
+#stop-btn[data-armed="true"] {
+  border-color: var(--gold); color: var(--gold-bright);
+  background: #1d2320; font-weight: 500;
+}
+#keep-btn { color: var(--gold); }
+#keep-btn[hidden] { display: none; }
+#stop-btn:hover, #keep-btn:hover { border-color: var(--line-ui-strong); }
+@media (prefers-reduced-motion: no-preference) {
+  #stop-btn { transition: border-color 160ms ease, background 160ms ease; }
+}
+
+.calendar-nav { width: 44px; height: 44px; min-width: 44px; }
+
+.home-run {
+  margin: 0.6rem 0 0;
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--sage);
+}
+
+.badge-text { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.badge-desc { font-size: 0.78rem; color: var(--muted); }
+
+#complete-title:focus { outline: none; }
+#complete-title:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
