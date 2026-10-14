@@ -27,6 +27,8 @@
   // on bedGain and el.volume is held at 1 (Chromium would otherwise apply it twice).
   const BED_VOL = 0.32;
   let bedLevel = BED_VOL;
+  let bedScale = 1;   // premium.js volume slider (0..1); routed gain = bedLevel × bedScale
+  const bedTarget = () => Math.max(0, Math.min(1, bedLevel * bedScale));
 
   // Fade the outgoing voice over ~40 ms on the audio clock before stopping it (no hard cut).
   const STOP_RAMP_S = 0.04;
@@ -149,9 +151,10 @@
     }
     if (!bedGain) {
       const v = Number(el.volume);
-      if (Number.isFinite(v) && v < 1) bedLevel = v; // carry the current (possibly faded) level
+      // carry the current (possibly faded) level; el.volume already includes the slider scale
+      if (Number.isFinite(v) && v < 1 && bedScale > 0) bedLevel = Math.min(1, v / bedScale);
       bedGain = ctx.createGain();
-      bedGain.gain.value = bedLevel;
+      bedGain.gain.value = bedTarget();
       try { el.volume = 1; } catch {}
       bedSrc.connect(bedGain);
       bedGain.connect(ctx.destination);
@@ -167,7 +170,7 @@
     bedLevel = BED_VOL;
     bedGain = ctx.createGain();
     bedGain.gain.value = 0;
-    try { bedGain.gain.setTargetAtTime(bedLevel, ctx.currentTime + 0.12, 0.03); } catch {}
+    try { bedGain.gain.setTargetAtTime(bedTarget(), ctx.currentTime + 0.12, 0.03); } catch {}
     bedSrc.connect(bedGain);
     bedGain.connect(ctx.destination);
   }
@@ -357,8 +360,15 @@
       bedLevel = Math.max(0, Math.min(1, Number(v) || 0));
       if (fade) return true;
       try { if (el) el.volume = 1; } catch {}
-      try { bedGain.gain.setTargetAtTime(bedLevel, ctx.currentTime, 0.05); } catch {}
+      try { bedGain.gain.setTargetAtTime(bedTarget(), ctx.currentTime, 0.05); } catch {}
       return true;
+    },
+    // Volume slider scale (0..1). Applied live to the routed bed gain (WebKit ignores el.volume).
+    setBedScale(s) {
+      const n = Number(s);
+      bedScale = Math.max(0, Math.min(1, Number.isFinite(n) ? n : 1));
+      if (!bedGain || !ctx || fade) return;
+      try { bedGain.gain.setTargetAtTime(bedTarget(), ctx.currentTime, 0.05); } catch {}
     },
     resume() {
       if (ctx && ctx.state === "suspended") ctx.resume().catch(() => {});

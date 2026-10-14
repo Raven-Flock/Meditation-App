@@ -204,3 +204,21 @@ test("mute then unmute during the early fade never raises the master above 0.2",
   assert.ok(levels.length >= 3);
   assert.ok(levels.every((v) => v <= 0.2), "levels: " + levels);
 });
+
+test("volume slider scales the routed bed gain live (WebKit ignores el.volume once routed)", async () => {
+  const { S, log } = load();
+  S.setKind("soft");
+  S.setBedScale(0.5);
+  const el = { ...fakeEl(), volume: 0.16 }; // premium.js already applied 0.32 × 0.5 to el.volume
+  S.fadeOutEarly(el);
+  const bedGain = log.gains[log.gains.length - 1];
+  assert.deepStrictEqual(bedGain.gain.calls.slice(-2, -1), [["set", 0.16, 10]], "routing carries 0.32 × 0.5, not double-scaled");
+  await wait(1700);
+  const fresh = log.gains[log.gains.length - 1];
+  assert.deepStrictEqual(fresh.gain.calls.slice(-1), [["target", 0.16, 10.12, 0.03]], "fresh gain returns to 0.32 × scale");
+  S.setBedScale(0.3);
+  assert.deepStrictEqual(fresh.gain.calls.slice(-1), [["target", 0.32 * 0.3, 10, 0.05]], "slider move applies live");
+  assert.strictEqual(S.setBedVolume(el, 0.32), true);
+  assert.deepStrictEqual(fresh.gain.calls.slice(-1), [["target", 0.32 * 0.3, 10, 0.05]], "setBedVolume keeps the slider scale");
+  assert.strictEqual(el.volume, 1);
+});
