@@ -155,3 +155,19 @@ test("sound switch / mute during the early fade leaves the level alone", () => {
   assert.deepStrictEqual(go(true), { sets: [], fades: [] }, "no .volume reset, no setFade(1) while fading");
   assert.deepStrictEqual(go(false), { sets: [0.5], fades: [1] }, "restores once the fade is over");
 });
+
+test("mute then unmute during the early fade never raises the master above 0.2", () => {
+  const { S, log } = load();
+  S.setKind("white");
+  const g = log.gains[0].gain;
+  const levels = [];
+  const orig = g.setTargetAtTime.bind(g);
+  g.setTargetAtTime = (v, t, c) => { orig(v, t, c); g.value = v; levels.push(v); };
+  S.setFade(0.2);
+  S.fadeOutEarly(null);
+  S.setMuted(true);
+  S.setMuted(false);
+  S.setFade(1);
+  assert.ok(levels.length >= 3);
+  assert.ok(levels.every((v) => v <= 0.2), "levels: " + levels);
+});

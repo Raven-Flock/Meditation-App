@@ -1034,7 +1034,10 @@ body.is-session .home-hero,
   background: #1d2320; font-weight: 500;
 }
 #keep-btn { color: var(--gold); }
-/* Reserve space; visibility:hidden also drops it from the a11y tree and tab order. */
+/* Keep sitting hangs off Stop's wrapper so Stop never moves. Idle: visibility:hidden
+   (out of the a11y tree and tab order) as well as [hidden]. */
+.stop-wrap { position: relative; display: inline-flex; }
+#keep-btn { position: absolute; left: calc(100% + .5rem); top: 0; white-space: nowrap; }
 #keep-btn[hidden] { display: inline-block !important; visibility: hidden; }
 #stop-btn:hover, #keep-btn:hover { border-color: var(--line-ui-strong); }
 @media (prefers-reduced-motion: no-preference) {

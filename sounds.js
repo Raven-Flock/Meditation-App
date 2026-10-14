@@ -263,7 +263,8 @@
 
   function setOutput(vol, mute) {
     if (!master) return;
-    const next = mute ? 0 : Math.max(0, Math.min(1, vol));
+    let next = mute ? 0 : Math.max(0, Math.min(1, vol));
+    if (fade) next = Math.min(next, master.gain.value); // never raise during the early fade
     master.gain.setTargetAtTime(next, audioCtx().currentTime, 0.05);
   }
 
@@ -308,7 +309,8 @@
     },
     setFade(t) {
       if (!master) return;
-      const v = muted || !enabled ? 0 : Math.max(0, Math.min(1, t));
+      let v = muted || !enabled ? 0 : Math.max(0, Math.min(1, t));
+      if (fade) v = Math.min(v, master.gain.value);
       master.gain.setTargetAtTime(v, audioCtx().currentTime, 0.08);
     },
     resume() {

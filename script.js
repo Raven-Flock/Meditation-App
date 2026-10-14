@@ -1134,7 +1134,8 @@
     saveStore({ musicEnabled: state.musicEnabled });
     syncMusicButtons();
     if (!state.musicEnabled) {
-      pauseAudio(false);
+      const e = engine();
+      if (!(e && e.isFading && e.isFading())) pauseAudio(false); // let the early fade finish
       return;
     }
     if (state.sessionActive) {
