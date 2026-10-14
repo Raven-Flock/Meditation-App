@@ -870,8 +870,10 @@
   }
 
   // Early end: fade every active layer (Sound Design: tau 0.30 s, stop at +1.6 s). Muted: no fade.
+  // Starts from the current level: no stopSoundscapeFade() here, or an early end inside the
+  // natural 30 s fade swells ~8 dB first. Callers clear the timers; the next Begin restores
+  // .volume and setFade(1) via updateSoundscapeVolume().
   function endAudioEarly() {
-    stopSoundscapeFade();
     const e = engine();
     if (e && e.fadeOutEarly) {
       e.fadeOutEarly(els.soundscape, { muted: state.muted || !state.musicEnabled });

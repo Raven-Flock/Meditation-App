@@ -107,3 +107,34 @@ test("new sit mid-fade: old Hush sources hard-stop with a 40 ms ramp, fresh voic
   const newVoice = log.gains[log.gains.length - 1];
   assert.notStrictEqual(newVoice, oldVoice);
 });
+
+test("early end inside the natural fade never raises the level (master at 0.2)", () => {
+  const { S, log } = load();
+  S.setKind("white");
+  const master = log.gains[0];
+  const voice = log.gains[log.gains.length - 1];
+  S.setFade(0.2);
+  const n = master.gain.calls.length;
+  S.fadeOutEarly(null);
+  const after = master.gain.calls.slice(n);
+  assert.ok(!after.some((c) => c[0] !== "cancel" && c[1] > 0.2), "master not raised: " + JSON.stringify(after));
+  assert.deepStrictEqual(voice.gain.calls.slice(-1), [["target", 0, 10, 0.3]]);
+});
+
+test("script.js endAudioEarly keeps the faded bed volume and master level", () => {
+  const js = fs.readFileSync(path.join(__dirname, "..", "script.js"), "utf8");
+  const m = js.match(/function endAudioEarly\(\) \{[\s\S]*?\n  \}\n/);
+  assert.ok(m, "endAudioEarly found");
+  const MUSIC_VOL = 0.5;
+  const soundscape = { volume: MUSIC_VOL * 0.2, paused: false };
+  const vols = [soundscape.volume];
+  const fades = [];
+  const els = { soundscape: new Proxy(soundscape, { set(o, k, v) { o[k] = v; if (k === "volume") vols.push(v); return true; } }) };
+  const eng = { setFade(t) { fades.push(t); }, fadeOutEarly() { return true; } };
+  const stopSoundscapeFade = () => { els.soundscape.volume = MUSIC_VOL; eng.setFade(1); };
+  const run = new Function("els", "engine", "state", "pauseAudio", "stopSoundscapeFade", "MUSIC_VOL",
+    m[0] + "\nendAudioEarly();");
+  run(els, () => eng, { muted: false, musicEnabled: true }, () => {}, stopSoundscapeFade, MUSIC_VOL);
+  assert.ok(vols.every((v) => v <= 0.1 + 1e-9), "bed volume never rises: " + vols);
+  assert.ok(fades.every((t) => t <= 0.2), "master never rises: " + fades);
+});
