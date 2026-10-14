@@ -1,0 +1,33 @@
+/* Self-hosted fonts (OFL 1.1, see fonts/CREDITS.md). Loaded after style.css so these stacks win. Visual Polish spec §4. */
+@font-face { font-family: "Figtree"; src: url(fonts/figtree-latin-var.woff2) format("woff2"); font-weight: 400 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Fraunces"; src: url(fonts/fraunces-latin-var.woff2) format("woff2"); font-weight: 300 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Fraunces"; src: url(fonts/fraunces-latin-var-italic.woff2) format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+
+/* Metric-matched fallbacks (Capsize metrics) */
+@font-face { font-family: "Figtree Fallback"; src: local("Segoe UI"), local("SegoeUI");
+  size-adjust: 101.27%; ascent-override: 93.81%; descent-override: 24.69%; line-gap-override: 0%; }
+@font-face { font-family: "Figtree Fallback Arial"; src: local("Arial"), local("Helvetica Neue"), local("Helvetica"), local("Roboto");
+  size-adjust: 100.72%; ascent-override: 94.32%; descent-override: 24.82%; line-gap-override: 0%; }
+@font-face { font-family: "Fraunces Fallback"; src: local("Georgia");
+  size-adjust: 105.20%; ascent-override: 92.96%; descent-override: 24.24%; line-gap-override: 0%; }
+@font-face { font-family: "Fraunces Fallback TNR"; src: local("Times New Roman"), local("Times");
+  size-adjust: 115.45%; ascent-override: 84.71%; descent-override: 22.09%; line-gap-override: 0%; }
+
+:root {
+  --display: "Fraunces", "Fraunces Fallback", "Fraunces Fallback TNR", serif;
+  --ui: "Figtree", "Figtree Fallback", "Figtree Fallback Arial", system-ui, sans-serif;
+}
+
+/* Share Stillpoint: one quiet text button on the completion view */
+.share-btn {
+  display: block;
+  width: fit-content;
+  margin: 0.85rem auto 0;
+}
+.share-status {
+  margin: 0.45rem 0 0;
+  min-height: 1.3em;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--mist);
+}

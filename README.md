@@ -69,7 +69,7 @@ Open `http://localhost:8080`. A service worker needs HTTP(S), not `file://`.
 
 ## Stack
 
-Plain HTML, CSS, and JavaScript. Google Fonts: Fraunces and Figtree, with serif/system fallbacks.
+Plain HTML, CSS, and JavaScript. Fonts: Fraunces and Figtree, self-hosted in `fonts/` (SIL Open Font License 1.1; see [`fonts/CREDITS.md`](./fonts/CREDITS.md)), with metric-matched fallbacks.
 
 ---
 
