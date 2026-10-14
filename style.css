@@ -1058,3 +1058,8 @@ body.is-session .home-hero,
 
 #complete-title:focus { outline: none; }
 #complete-title:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+/* Narrow: Keep sitting drops below Stop, centred; its row is always reserved so Stop never moves. */
+@media (max-width: 400px) {
+  .stop-wrap { padding-bottom: calc(44px + .5rem); }
+  #keep-btn { left: 50%; top: calc(100% - 44px); transform: translateX(-50%); }
+}
