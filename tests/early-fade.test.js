@@ -138,3 +138,20 @@ test("script.js endAudioEarly keeps the faded bed volume and master level", () =
   assert.ok(vols.every((v) => v <= 0.1 + 1e-9), "bed volume never rises: " + vols);
   assert.ok(fades.every((t) => t <= 0.2), "master never rises: " + fades);
 });
+
+test("sound switch / mute during the early fade leaves the level alone", () => {
+  const js = fs.readFileSync(path.join(__dirname, "..", "script.js"), "utf8");
+  const m = js.match(/function updateSoundscapeVolume\(\) \{[\s\S]*?\n  \}\n/);
+  assert.ok(m, "updateSoundscapeVolume found");
+  const run = new Function("els", "engine", "state", "fadeFactor", "MUSIC_VOL", m[0] + "\nupdateSoundscapeVolume();");
+  const go = (fading) => {
+    const sets = [];
+    const fades = [];
+    const soundscape = { _v: 0.1, get volume() { return this._v; }, set volume(v) { this._v = v; sets.push(v); } };
+    const eng = { isFading: () => fading, setFade(t) { fades.push(t); } };
+    run({ soundscape }, () => eng, { musicEnabled: true, muted: false, isOpen: false, sessionActive: false }, () => 1, 0.5);
+    return { sets, fades };
+  };
+  assert.deepStrictEqual(go(true), { sets: [], fades: [] }, "no .volume reset, no setFade(1) while fading");
+  assert.deepStrictEqual(go(false), { sets: [0.5], fades: [1] }, "restores once the fade is over");
+});

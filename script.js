@@ -715,6 +715,10 @@
   }
 
   function updateSoundscapeVolume() {
+    // During the 1.6 s early fade, leave the level alone (no .volume reset, no setFade(1));
+    // the next Begin cancels the fade and restores it here.
+    const fe = engine();
+    if (fe && fe.isFading && fe.isFading()) return;
     const t = fadeFactor();
     if (!state.musicEnabled || state.muted || state.isOpen || !state.sessionActive) {
       els.soundscape.volume = MUSIC_VOL;
@@ -813,6 +817,7 @@
     state.sessionActive = true;
     state.bellArmed = true;
     resetStopConfirm();
+    keepButton(); // reserve its space (visibility:hidden) so Stop doesn't shift when it arms
     const eng = engine();
     if (eng && eng.cancelFade) eng.cancelFade();
     pushSitState();

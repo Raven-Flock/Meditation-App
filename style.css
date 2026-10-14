@@ -282,11 +282,6 @@ button {
   cursor: not-allowed;
 }
 
-.ghost-btn.danger {
-  color: var(--danger);
-  border-color: rgba(212, 160, 144, 0.28);
-}
-
 .home-hero h1 {
   margin: 0.35rem 0 0.85rem;
   font-family: var(--display);
@@ -1039,7 +1034,8 @@ body.is-session .home-hero,
   background: #1d2320; font-weight: 500;
 }
 #keep-btn { color: var(--gold); }
-#keep-btn[hidden] { display: none; }
+/* Reserve space; visibility:hidden also drops it from the a11y tree and tab order. */
+#keep-btn[hidden] { display: inline-block !important; visibility: hidden; }
 #stop-btn:hover, #keep-btn:hover { border-color: var(--line-ui-strong); }
 @media (prefers-reduced-motion: no-preference) {
   #stop-btn { transition: border-color 160ms ease, background 160ms ease; }
