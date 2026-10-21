@@ -15,12 +15,11 @@
   <link rel="icon" href="./icon.svg?v=2" type="image/svg+xml">
   <link rel="icon" href="./icon-192.png?v=2" type="image/png" sizes="192x192">
   <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=2" sizes="180x180">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./style.css?v=31">
-  <link rel="stylesheet" href="./brand.css?v=31">
-  <link rel="stylesheet" href="./premium.css?v=31">
+  <link rel="preload" href="./fonts/fraunces-latin-var.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="./style.css?v=32">
+  <link rel="stylesheet" href="./brand.css?v=32">
+  <link rel="stylesheet" href="./premium.css?v=32">
+  <link rel="stylesheet" href="./fonts.css?v=32">
 </head>
 <body>
   <a class="skip-link" href="#app">Skip to content</a>
@@ -182,6 +181,9 @@
         <p class="complete-meta" id="complete-meta">10 minutes · Timed sit</p>
         <p class="complete-streak" id="complete-streak"></p>
         <button type="button" class="primary-btn" id="home-btn">Return home</button>
+        <button type="button" class="text-btn share-btn" id="share-btn" hidden>Share Stillpoint</button>
+        <p class="share-status" id="share-status" role="status" aria-live="polite"></p>
+        <script src="./share.js?v=32" defer></script>
         <a class="text-btn tip-btn tip-btn-block" href="https://www.buymeacoffee.com/nrsteward" target="_blank" rel="noopener noreferrer">Leave a tip</a>
       </section>
     </main>
@@ -235,9 +237,9 @@
     </div>
   </div>
   <audio id="soundscape" src="./audio/stillpoint-sit.mp3" loop preload="none"></audio>
-  <script src="./sounds.js?v=31" defer></script>
-  <script src="./sw-update.js?v=31" defer></script>
-  <script src="./script.js?v=31" defer></script>
-  <script src="./premium.js?v=31" defer></script>
+  <script src="./sounds.js?v=32" defer></script>
+  <script src="./sw-update.js?v=32" defer></script>
+  <script src="./script.js?v=32" defer></script>
+  <script src="./premium.js?v=32" defer></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-const CACHE = "stillpoint-v31";
+const CACHE = "stillpoint-v32";
 const SHELL = [
   "./",
   "./index.html",
@@ -17,6 +17,11 @@ const SHELL = [
   "./icon-512-maskable.png",
   "./apple-touch-icon.png",
   "./brand/logo-a.png",
+  "./fonts.css",
+  "./fonts/figtree-latin-var.woff2",
+  "./fonts/fraunces-latin-var.woff2",
+  "./fonts/fraunces-latin-var-italic.woff2",
+  "./share.js",
 ];
 
 self.addEventListener("install", (event) => {
