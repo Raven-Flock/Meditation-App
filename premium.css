@@ -87,6 +87,282 @@ body.is-session .session-hint {
   opacity: 0.55;
 }
 
+/* Session instrument — altimeter is the hero, timer stays readable beneath it. */
+.view-session {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.view-session .session-kicker {
+  margin-bottom: 0.15rem;
+}
+
+.instrument {
+  position: relative;
+  width: min(17.75rem, 78vw);
+  aspect-ratio: 1;
+  margin: 0.35rem auto 0.15rem;
+}
+
+.alt-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  overflow: visible;
+}
+
+.alt-bezel {
+  fill: rgba(8, 10, 9, 0.35);
+  stroke: rgba(212, 196, 158, 0.28);
+  stroke-width: 1.25;
+}
+
+.alt-glass {
+  stroke: rgba(240, 228, 196, 0.16);
+  stroke-width: 1;
+}
+
+.alt-ring {
+  fill: none;
+  stroke: rgba(212, 196, 158, 0.16);
+  stroke-width: 1;
+}
+
+.alt-ring-mid {
+  stroke: rgba(138, 160, 144, 0.28);
+}
+
+.alt-breath {
+  fill: none;
+  stroke: rgba(138, 160, 144, 0.42);
+  stroke-width: 1.1;
+  transition: stroke 0.9s var(--ease), stroke-width 0.9s var(--ease), opacity 0.9s var(--ease);
+}
+
+.alt-tick {
+  stroke: rgba(138, 160, 144, 0.42);
+  stroke-width: 1;
+  stroke-linecap: round;
+}
+
+.alt-tick.is-major {
+  stroke: rgba(212, 196, 158, 0.82);
+  stroke-width: 1.45;
+}
+
+.alt-num {
+  fill: rgba(232, 220, 188, 0.78);
+  font-family: var(--ui);
+  font-size: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.instrument .orb-stage {
+  position: absolute;
+  inset: 29%;
+  width: auto;
+  height: auto;
+  margin: 0;
+  z-index: 2;
+}
+
+.instrument .orb {
+  width: 70%;
+  height: 70%;
+}
+
+.alt-needle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 3;
+  width: 1.5px;
+  height: 39%;
+  margin-left: -0.75px;
+  margin-top: -39%;
+  border-radius: 1px;
+  pointer-events: none;
+  background: linear-gradient(to top, transparent 0 46%, var(--gold) 52%, var(--gold-bright) 100%);
+  transform-origin: 50% 100%;
+  transform: rotate(-120deg);
+  transition: transform 0.95s var(--ease), opacity 0.8s var(--ease);
+  filter: drop-shadow(0 0 3px rgba(240, 228, 196, 0.28));
+}
+
+.alt-needle::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  margin-left: -2.5px;
+  border-radius: 50%;
+  background: var(--gold-bright);
+  box-shadow: 0 0 6px rgba(240, 228, 196, 0.7);
+}
+
+.alt-readout {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 70%;
+  z-index: 4;
+  margin: 0;
+  text-align: center;
+  pointer-events: none;
+  font-family: var(--display);
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold-bright);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.45);
+}
+
+#alt-value {
+  font-size: 1.35rem;
+}
+
+.alt-unit {
+  margin-left: 0.2rem;
+  font-family: var(--ui);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+}
+
+.alt-trend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 0.2rem 0 0;
+  min-height: 1rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--sage);
+}
+
+.alt-trend-mark {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-top: 1px solid currentColor;
+  border-right: 1px solid currentColor;
+  transform: rotate(-45deg);
+}
+
+.alt-trend.is-steady .alt-trend-mark {
+  width: 0.55rem;
+  height: 0;
+  border: 0;
+  border-top: 1px solid currentColor;
+  transform: none;
+}
+
+.alt-trend.is-descending .alt-trend-mark {
+  transform: rotate(135deg);
+}
+
+.alt-trend.is-holding .alt-trend-mark {
+  width: 0.38rem;
+  height: 0.38rem;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  transform: none;
+}
+
+.view-session .phase {
+  margin-top: 0.45rem;
+  font-size: 1.35rem;
+}
+
+.view-session .timer {
+  margin-top: 0.1rem;
+  font-size: clamp(2rem, 8vw, 2.8rem);
+}
+
+.view-session .session-hint {
+  margin: 0.2rem 0 0.85rem;
+}
+
+body.phase-inhale .alt-breath {
+  stroke: rgba(240, 228, 196, 0.9);
+  stroke-width: 1.8;
+}
+
+body.phase-hold-in .alt-breath,
+body.phase-hold-out .alt-breath {
+  stroke: rgba(212, 196, 158, 0.62);
+  stroke-width: 1.25;
+}
+
+body.phase-exhale .alt-breath {
+  stroke: rgba(138, 160, 144, 0.32);
+  stroke-width: 0.8;
+  opacity: 0.85;
+}
+
+body.phase-inhale .alt-needle {
+  filter: drop-shadow(0 0 6px rgba(240, 228, 196, 0.55));
+}
+
+body.phase-exhale .alt-needle {
+  opacity: 0.62;
+}
+
+body:not(.is-running) .alt-breath {
+  opacity: 0.4;
+}
+
+body.is-session .view-session,
+body.is-complete .view-complete {
+  animation: stillpoint-rise 0.85s var(--ease);
+}
+
+@keyframes stillpoint-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.complete-held {
+  margin: 0.15rem 0 0;
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--sage);
+  letter-spacing: 0.02em;
+}
+
+.complete-summit {
+  margin: 0.85rem 0 0.15rem;
+  font-family: var(--display);
+  font-weight: 300;
+  font-size: clamp(1.7rem, 6vw, 2.35rem);
+  font-variant-numeric: tabular-nums;
+  color: var(--gold-bright);
+  letter-spacing: -0.03em;
+}
+
+.history-list li > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.history-peak {
+  margin-top: 0.12rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+}
+
 body.is-complete .site-foot {
   display: none !important;
 }
