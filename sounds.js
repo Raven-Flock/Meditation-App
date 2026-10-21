@@ -2,11 +2,7 @@
   "use strict";
 
   const VOL = {
-    white: 0.20,
-    rain: 0.22,
-    fall: 0.26,
-    shore: 0.2,
-    wild: 0.16
+    white: 0.20
   };
 
   const FILE_KINDS = new Set(["soft", "shore", "wild", "rain", "fall"]);
@@ -21,6 +17,18 @@
   let running = false;
   let voiceOut = null;
   let brownCache = null;
+  // Early-end fade (Sound Design spec): each layer fades on its own gain, never master.
+  let bedSrc = null;   // MediaElementSource for the <audio> bed (created on first early end)
+  let bedGain = null;  // per-layer gain for the file bed (music bed / nature chips)
+  let fade = null;     // { timer, hush: [nodes], hushGain, bedGain, el } while a fade runs
+  const EARLY_TAU_S = 0.30;
+  const EARLY_STOP_S = 1.6;
+  // Bed level (script.js MUSIC_VOL). Once routed, WebKit ignores el.volume, so the level lives
+  // on bedGain and el.volume is held at 1 (Chromium would otherwise apply it twice).
+  const BED_VOL = 0.32;
+  let bedLevel = BED_VOL;
+  let bedScale = 1;   // premium.js volume slider (0..1); routed gain = bedLevel × bedScale
+  const bedTarget = () => Math.max(0, Math.min(1, bedLevel * bedScale));
 
   // Fade the outgoing voice over ~40 ms on the audio clock before stopping it (no hard cut).
   const STOP_RAMP_S = 0.04;
@@ -130,6 +138,151 @@
     setTimeout(() => hardStop(old), Math.ceil((STOP_RAMP_S + 0.08) * 1000));
   }
 
+  // Route the file bed through Web Audio so its fade works on iOS (which ignores .volume).
+  // Lazy: only the first early end routes it; after that the element always plays via bedGain.
+  function routeBed(el) {
+    if (!el || !audioCtx()) return null;
+    if (!bedSrc) {
+      try {
+        bedSrc = ctx.createMediaElementSource(el);
+      } catch {
+        return null;
+      }
+    }
+    if (!bedGain) {
+      const v = Number(el.volume);
+      // carry the current (possibly faded) level; el.volume already includes the slider scale
+      if (Number.isFinite(v) && v < 1 && bedScale > 0) bedLevel = Math.min(1, v / bedScale);
+      bedGain = ctx.createGain();
+      bedGain.gain.value = bedTarget();
+      try { el.volume = 1; } catch {}
+      bedSrc.connect(bedGain);
+      bedGain.connect(ctx.destination);
+    }
+    return bedGain;
+  }
+
+  // New bed gain after a fade. Starts at 0 and only comes back up to the bed level after the
+  // paused element has flushed, so the reset can't re-peak (the ~1.6 s tick in WebKit).
+  function freshBedGain() {
+    if (!bedSrc || !ctx) return;
+    try { bedSrc.disconnect(); } catch {}
+    bedLevel = BED_VOL;
+    bedGain = ctx.createGain();
+    bedGain.gain.value = 0;
+    try { bedGain.gain.setTargetAtTime(bedTarget(), ctx.currentTime + 0.12, 0.03); } catch {}
+    bedSrc.connect(bedGain);
+    bedGain.connect(ctx.destination);
+  }
+
+  function fadeParam(g, t, tau) {
+    g.gain.cancelScheduledValues(t);
+    g.gain.setValueAtTime(g.gain.value, t); // no cancelAndHold (Safari)
+    g.gain.setTargetAtTime(0, t, tau);
+  }
+
+  function resetBed(el) {
+    try {
+      el.pause();
+      el.currentTime = 0;
+    } catch {}
+  }
+
+  // Early end: every active layer fades with tau 0.30 s and stops at +1.6 s.
+  // Returns false when a fade is already running (re-entry guard).
+  function fadeOutEarly(el, opts = {}) {
+    if (fade) return false;
+    const mute = Boolean(opts.muted) || muted;
+    const bedPlaying = Boolean(el && !el.paused);
+    if (mute || !audioCtx() || ctx.state === "closed") {
+      stopAll();
+      if (el) resetBed(el);
+      return true;
+    }
+    if (ctx.state !== "running") {
+      // WebKit can hand back a suspended context: await resume(), keep the bed playing, then fade.
+      const pending = { pending: true, hush: [], hushGain: null, bedGain: null, el: null, timer: null };
+      fade = pending;
+      let resumed;
+      try { resumed = Promise.resolve(ctx.resume()); } catch { resumed = Promise.reject(); }
+      resumed.catch(() => {}).then(() => {
+        if (fade !== pending) return; // a new sit cancelled it
+        fade = null;
+        if (ctx.state === "running") startEarlyFade(el, bedPlaying && !el.paused);
+        else { stopAll(); if (el) resetBed(el); }
+      });
+      return true;
+    }
+    startEarlyFade(el, bedPlaying);
+    return true;
+  }
+
+  function startEarlyFade(el, bedPlaying) {
+    timers.forEach((id) => clearTimeout(id));
+    timers = [];
+    const t = ctx.currentTime;
+    const hush = nodes;
+    const hushGain = voiceOut;
+    nodes = [];
+    voiceOut = null;
+    running = false;
+    if (hushGain && hush.length) {
+      try { fadeParam(hushGain, t, EARLY_TAU_S); } catch {}
+      hush.forEach((node) => {
+        if (!node.stop) return;
+        try {
+          node.onended = () => hardStop(hush);
+          node.stop(t + EARLY_STOP_S);
+        } catch {}
+      });
+    } else if (hush.length) {
+      hardStop(hush);
+    }
+    let g = null;
+    if (bedPlaying) {
+      g = routeBed(el);
+      if (g) {
+        try { fadeParam(g, t, EARLY_TAU_S); } catch {}
+      } else {
+        resetBed(el);
+      }
+    }
+    const state = { hush, hushGain, bedGain: g, el: bedPlaying ? el : null, timer: null };
+    state.timer = setTimeout(() => finishFade(state), Math.ceil(EARLY_STOP_S * 1000));
+    fade = state;
+  }
+
+  function finishFade(state) {
+    if (fade !== state) return;
+    fade = null;
+    if (state.bedGain) {
+      try { state.bedGain.gain.cancelScheduledValues(0); state.bedGain.gain.value = 0; } catch {}
+    }
+    if (state.el) resetBed(state.el);
+    if (state.bedGain) freshBedGain();
+    hardStop(state.hush);
+  }
+
+  // A new sit while a fade runs: hard-stop the old sources with a 40 ms ramp, fresh gains.
+  function cancelFade() {
+    const state = fade;
+    if (!state) return;
+    fade = null;
+    clearTimeout(state.timer);
+    const t = ctx ? ctx.currentTime : 0;
+    if (state.hushGain && ctx) {
+      try { fadeParam(state.hushGain, t, 0.01); } catch {}
+      state.hush.forEach((node) => {
+        try { if (node.stop) node.stop(t + STOP_RAMP_S); } catch {}
+      });
+      setTimeout(() => hardStop(state.hush), Math.ceil((STOP_RAMP_S + 0.08) * 1000));
+    } else {
+      hardStop(state.hush);
+    }
+    if (state.el) resetBed(state.el);
+    if (state.bedGain) freshBedGain();
+  }
+
   function startWhite() {
     audioCtx();
     const src = track(sourceFrom(brownBuffer(20)));
@@ -144,7 +297,8 @@
 
   function setOutput(vol, mute) {
     if (!master) return;
-    const next = mute ? 0 : Math.max(0, Math.min(1, vol));
+    let next = mute ? 0 : Math.max(0, Math.min(1, vol));
+    if (fade) next = Math.min(next, master.gain.value); // never raise during the early fade
     master.gain.setTargetAtTime(next, audioCtx().currentTime, 0.05);
   }
 
@@ -155,6 +309,7 @@
       return;
     }
     audioCtx();
+    cancelFade();
     stopAll();
     running = true;
     if (kind === "white") startWhite();
@@ -166,6 +321,9 @@
     kinds: ["soft", "white", "rain", "fall", "shore", "wild"],
     start,
     stop: stopAll,
+    fadeOutEarly,
+    cancelFade,
+    isFading() { return Boolean(fade); },
     setKind(next) {
       if (next === kind && running) return;
       kind = next;
@@ -185,8 +343,37 @@
     },
     setFade(t) {
       if (!master) return;
-      const v = muted || !enabled ? 0 : Math.max(0, Math.min(1, t));
+      let v = muted || !enabled ? 0 : Math.max(0, Math.min(1, t));
+      if (fade) v = Math.min(v, master.gain.value);
       master.gain.setTargetAtTime(v, audioCtx().currentTime, 0.08);
+    },
+    // Call on Begin, inside the user gesture: creates the context and resumes it there, so
+    // WebKit has it running before the first early end.
+    prime() {
+      const c = audioCtx();
+      if (c && c.state === "suspended") return Promise.resolve(c.resume()).catch(() => {});
+      return Promise.resolve();
+    },
+    // Bed level. Returns true when the bed is routed and the level went onto bedGain.
+    setBedVolume(el, v) {
+      if (!bedGain || !ctx) return false;
+      bedLevel = Math.max(0, Math.min(1, Number(v) || 0));
+      if (fade) return true;
+      try { if (el) el.volume = 1; } catch {}
+      try { bedGain.gain.setTargetAtTime(bedTarget(), ctx.currentTime, 0.05); } catch {}
+      return true;
+    },
+    // True once the bed plays through bedGain; premium.js then keeps el.volume at 1 so only the
+    // gain carries the slider scale (Chromium still honours el.volume on a routed element).
+    isBedRouted() {
+      return !!bedGain;
+    },
+    // Volume slider scale (0..1). Applied live to the routed bed gain (WebKit ignores el.volume).
+    setBedScale(s) {
+      const n = Number(s);
+      bedScale = Math.max(0, Math.min(1, Number.isFinite(n) ? n : 1));
+      if (!bedGain || !ctx || fade) return;
+      try { bedGain.gain.setTargetAtTime(bedTarget(), ctx.currentTime, 0.05); } catch {}
     },
     resume() {
       if (ctx && ctx.state === "suspended") ctx.resume().catch(() => {});

@@ -59,14 +59,22 @@
     osc.stop(now + 1.45);
   }
 
+  function bedRouted() {
+    const e = window.StillpointSound;
+    return !!(e && typeof e.isBedRouted === "function" && e.isBedRouted());
+  }
+
   function applyScale() {
     const audio = document.getElementById("soundscape");
     if (audio && volDesc && volDesc.set) {
       applying = true;
-      volDesc.set.call(audio, clamp01(lastRequested * userScale));
+      // routed: the bed gain carries the scale; el.volume stays 1 (no scale², fade held)
+      volDesc.set.call(audio, bedRouted() ? 1 : clamp01(lastRequested * userScale));
       applying = false;
     }
     if (rawSetFade) rawSetFade(clamp01(lastFade * userScale));
+    const engine = window.StillpointSound;
+    if (engine && typeof engine.setBedScale === "function") engine.setBedScale(userScale);
   }
 
   function wrapAudioVolume() {
@@ -78,8 +86,9 @@
         return volDesc.get.call(audio);
       },
       set(v) {
-        if (applying) {
-          volDesc.set.call(audio, clamp01(v));
+        if (applying || bedRouted()) {
+          // routed: the bed gain carries level and scale; el.volume stays 1 in every engine
+          volDesc.set.call(audio, applying ? clamp01(v) : 1);
           return;
         }
         lastRequested = Number(v);
@@ -173,6 +182,8 @@
     wrapAudioVolume();
     wrapSynthFade();
     restorePrefs();
+    const engine = window.StillpointSound;
+    if (engine && typeof engine.setBedScale === "function") engine.setBedScale(userScale);
     applyScale();
     relabelHush();
     bind();
