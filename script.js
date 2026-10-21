@@ -2,7 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "stillpoint-v1";
-  const CACHE_ID = "stillpoint-v30";
+  const CACHE_ID = "stillpoint-v32";
   const AUDIO_BY_MODE = {
     sit: "./audio/stillpoint-sit.mp3",
     box: "./audio/stillpoint-box.mp3",
@@ -19,6 +19,8 @@
   const MUSIC_VOL = 0.32;
   const BELL_VOL = 0.72;
   const MIN_LOG_SECONDS = 15;
+  const METERS_PER_SECOND = 1000 / 3600;
+  const OPEN_CEILINGS = [100, 250, 500, 1000, 2000, 5000, 10000, 20000];
   const DEFAULT_GOALS = { dailyMinutes: 10, weeklySits: 5 };
 
   const BADGE_DEFS = [
@@ -76,6 +78,13 @@
     customMinutes: document.getElementById("custom-minutes"),
     timer: document.getElementById("timer-display"),
     timerLive: document.getElementById("timer-live"),
+    altValue: document.getElementById("alt-value"),
+    altUnit: document.getElementById("alt-unit"),
+    altNeedle: document.getElementById("alt-needle"),
+    altTicks: document.getElementById("alt-ticks"),
+    altTrend: document.getElementById("alt-trend"),
+    altTrendLabel: document.getElementById("alt-trend-label"),
+    altLive: document.getElementById("alt-live"),
     phase: document.getElementById("phase-label"),
     hint: document.getElementById("session-hint"),
     kicker: document.getElementById("session-kicker"),
@@ -116,7 +125,9 @@
     complete: {
       title: document.getElementById("complete-title"),
       meta: document.getElementById("complete-meta"),
-      streak: document.getElementById("complete-streak")
+      streak: document.getElementById("complete-streak"),
+      summit: document.getElementById("complete-summit"),
+      held: document.getElementById("complete-held")
     }
   };
 
@@ -146,7 +157,9 @@
     sessionMeta: null,
     confirmTimer: null,
     sitHistory: false,
-    ignorePop: false
+    ignorePop: false,
+    altPeak: 0,
+    altCeilingKey: ""
   };
   const CONFIRM_MS = 4000;
 
@@ -591,6 +604,13 @@
     }
   }
 
+  function peakLabel(item) {
+    if (!item || item.peakAltitude == null || item.peakAltitude === "") return "";
+    const n = Math.round(Number(item.peakAltitude));
+    if (!Number.isFinite(n)) return "";
+    return item.altitudeUnit === "m" ? `Peak ${n} m` : `Peak ${n}`;
+  }
+
   function renderHistoryList(store) {
     els.historyList.replaceChildren();
     const dayKey = state.selectedDay;
@@ -599,8 +619,17 @@
       const li = document.createElement("li");
       const left = document.createElement("div");
       const right = document.createElement("strong");
+      const title = document.createElement("span");
       const done = item.completed ? "completed" : "stopped early";
-      left.textContent = `${item.day} · ${item.typeLabel}`;
+      title.textContent = `${item.day} · ${item.typeLabel}`;
+      left.append(title);
+      const peak = peakLabel(item);
+      if (peak) {
+        const note = document.createElement("span");
+        note.className = "history-peak";
+        note.textContent = peak;
+        left.append(note);
+      }
       right.textContent = item.isOpen
         ? `${item.minutes} min · open · ${done}`
         : `${item.minutes} min · ${done}`;
@@ -754,6 +783,137 @@
     if (e) e.stop();
   }
 
+  function altitudeValue() {
+    if (state.isOpen) return state.elapsed * METERS_PER_SECOND;
+    const total = Math.max(1, state.durationMinutes * 60);
+    return Math.min(100, (state.elapsed / total) * 100);
+  }
+
+  function openCeiling(meters) {
+    for (let i = 0; i < OPEN_CEILINGS.length; i += 1) {
+      if (meters <= OPEN_CEILINGS[i] * 0.96) return OPEN_CEILINGS[i];
+    }
+    return OPEN_CEILINGS[OPEN_CEILINGS.length - 1];
+  }
+
+  function tickLabel(n) {
+    const v = Math.round(n);
+    if (v >= 1000) {
+      const k = v / 1000;
+      const text = Number.isInteger(k) ? String(k) : k.toFixed(1);
+      return `${text}k`;
+    }
+    return String(v);
+  }
+
+  function facePoint(cx, cy, r, degFrom12) {
+    const rad = ((degFrom12 - 90) * Math.PI) / 180;
+    return {
+      x: cx + r * Math.cos(rad),
+      y: cy + r * Math.sin(rad)
+    };
+  }
+
+  function drawAltFace(labels) {
+    const g = els.altTicks;
+    if (!g) return;
+    const ns = "http://www.w3.org/2000/svg";
+    g.replaceChildren();
+    const cx = 120;
+    const cy = 120;
+    const start = -120;
+    const sweep = 240;
+    const steps = 40;
+    for (let i = 0; i <= steps; i += 1) {
+      const major = i % 10 === 0;
+      const deg = start + (sweep * i) / steps;
+      const outer = facePoint(cx, cy, 106, deg);
+      const inner = facePoint(cx, cy, major ? 93 : 100, deg);
+      const line = document.createElementNS(ns, "line");
+      line.setAttribute("x1", outer.x.toFixed(2));
+      line.setAttribute("y1", outer.y.toFixed(2));
+      line.setAttribute("x2", inner.x.toFixed(2));
+      line.setAttribute("y2", inner.y.toFixed(2));
+      line.setAttribute("class", major ? "alt-tick is-major" : "alt-tick");
+      g.append(line);
+      if (major) {
+        const lp = facePoint(cx, cy, 80, deg);
+        const text = document.createElementNS(ns, "text");
+        text.setAttribute("x", lp.x.toFixed(2));
+        text.setAttribute("y", lp.y.toFixed(2));
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("dominant-baseline", "middle");
+        text.setAttribute("class", "alt-num");
+        text.textContent = labels[i / 10] || "";
+        g.append(text);
+      }
+    }
+  }
+
+  function ensureAltFace(ceiling, unit) {
+    const key = `${unit}:${ceiling}`;
+    if (state.altCeilingKey === key) return;
+    state.altCeilingKey = key;
+    const labels = unit === "pct"
+      ? ["0", "25", "50", "75", "100"]
+      : [0, 0.25, 0.5, 0.75, 1].map((part) => tickLabel(ceiling * part));
+    drawAltFace(labels);
+  }
+
+  function trendNow() {
+    if (state.status === "paused") return { id: "holding", label: "Holding" };
+    if (document.body.classList.contains("phase-exhale")) return { id: "descending", label: "Descending" };
+    if (document.body.classList.contains("phase-inhale")) return { id: "climbing", label: "Climbing" };
+    return { id: "steady", label: "Steady" };
+  }
+
+  function altitudePhrase(value, unit) {
+    if (unit === "m") return `Altitude ${Math.round(value)} meters`;
+    return `Altitude ${Math.round(value)} percent`;
+  }
+
+  function renderAltimeter(options) {
+    const announce = Boolean(options && options.announce);
+    const unit = state.isOpen ? "m" : "pct";
+    const value = altitudeValue();
+    if (value > state.altPeak) state.altPeak = value;
+    const ceiling = unit === "pct" ? 100 : openCeiling(Math.max(value, state.altPeak));
+    ensureAltFace(ceiling, unit);
+    const span = ceiling > 0 ? Math.max(0, Math.min(1, value / ceiling)) : 0;
+    if (els.altNeedle) els.altNeedle.style.transform = `rotate(${(-120 + span * 240).toFixed(2)}deg)`;
+    if (els.altValue) els.altValue.textContent = value.toFixed(1);
+    if (els.altUnit) els.altUnit.textContent = unit === "m" ? "m" : "%";
+    const trend = trendNow();
+    if (els.altTrend) {
+      els.altTrend.classList.remove("is-climbing", "is-steady", "is-descending", "is-holding");
+      els.altTrend.classList.add(`is-${trend.id}`);
+    }
+    if (els.altTrendLabel) els.altTrendLabel.textContent = trend.label;
+    if (announce && els.altLive) {
+      els.altLive.textContent = `${altitudePhrase(value, unit)}. ${trend.label}.`;
+    }
+  }
+
+  function paintIdleAltimeter() {
+    state.altPeak = 0;
+    state.altCeilingKey = "";
+    ensureAltFace(100, "pct");
+    if (els.altNeedle) els.altNeedle.style.transform = "rotate(-120deg)";
+    if (els.altValue) els.altValue.textContent = "0.0";
+    if (els.altUnit) els.altUnit.textContent = "%";
+    if (els.altTrend) {
+      els.altTrend.classList.remove("is-climbing", "is-descending", "is-holding");
+      els.altTrend.classList.add("is-steady");
+    }
+    if (els.altTrendLabel) els.altTrendLabel.textContent = "Steady";
+    if (els.altLive) els.altLive.textContent = "";
+  }
+
+  function summitLine() {
+    if (state.isOpen) return `Summit ${Math.round(state.altPeak)} m`;
+    return `Summit ${Math.round(state.altPeak)}`;
+  }
+
   function setPhase(index) {
     const type = TYPES[state.type];
     const phases = type.phases;
@@ -765,6 +925,7 @@
     document.body.classList.toggle("is-sit", state.type === "sit");
     document.body.classList.toggle("is-box", state.type === "box");
     document.body.classList.toggle("is-wind", state.type === "wind");
+    renderAltimeter();
     return phase;
   }
 
@@ -790,19 +951,17 @@
 
   function tick() {
     state.elapsed += 1;
-    if (state.isOpen) {
-      renderTimerNow();
-      if (state.elapsed % 30 === 0) announceTime();
-      return;
+    if (!state.isOpen) {
+      state.remaining = Math.max(0, state.remaining - 1);
+      updateSoundscapeVolume();
     }
-    state.remaining = Math.max(0, state.remaining - 1);
-    updateSoundscapeVolume();
     renderTimerNow();
-    if (state.remaining === 0) {
+    renderAltimeter({ announce: state.elapsed > 0 && state.elapsed % 30 === 0 });
+    if (!state.isOpen && state.remaining === 0) {
       if (state.status === "running") completeSession(true);
       return;
     }
-    if (state.remaining % 30 === 0) announceTime();
+    if (state.elapsed % 30 === 0) announceTime();
   }
 
   function startTicking() {
@@ -820,6 +979,8 @@
     state.elapsed = 0;
     state.remaining = isOpen ? 0 : minutes * 60;
     state.phaseIndex = 0;
+    state.altPeak = 0;
+    state.altCeilingKey = "";
     state.status = "running";
     state.hiddenWhileRunning = false;
     state.sessionActive = true;
@@ -844,6 +1005,7 @@
     announceTime();
     setView("session");
     setPhase(0);
+    renderAltimeter({ announce: true });
     schedulePhases();
     startAudioFromGesture(true);
     startTicking();
@@ -861,6 +1023,7 @@
     els.pause.textContent = "Resume";
     els.pause.setAttribute("aria-pressed", "true");
     els.phase.textContent = "Paused";
+    renderAltimeter({ announce: true });
   }
 
   function resumeSession() {
@@ -875,6 +1038,7 @@
     updateSoundscapeVolume();
     startTicking();
     requestWakeLock();
+    renderAltimeter({ announce: true });
   }
 
   function resetToConfiguredTime() {
@@ -919,6 +1083,7 @@
     resetToConfiguredTime();
     // Timed early stop: logged as stopped early; it still counts toward days sat. Short sits discard.
     if (!state.isOpen && elapsed >= MIN_LOG_SECONDS) logSession(false, elapsed);
+    paintIdleAltimeter();
     renderStats();
     els.begin.focus();
   }
@@ -1068,6 +1233,9 @@
   function logSession(completed, elapsedSeconds, natural) {
     const minutes = Math.max(1, Math.round(elapsedSeconds / 60));
     const store = loadStore();
+    const activeMinutes = Math.max(elapsedSeconds, 1) / 60;
+    const peakAltitude = Math.round(state.altPeak * 10) / 10;
+    const climbRate = Math.round((state.altPeak / activeMinutes) * 10) / 10;
     store.history.push({
       day: todayKey(),
       type: state.type,
@@ -1075,7 +1243,10 @@
       minutes: state.isOpen ? Math.max(1, Math.round(elapsedSeconds / 60)) : (completed ? state.durationMinutes : minutes),
       completed,
       isOpen: state.isOpen,
-      at: Date.now()
+      at: Date.now(),
+      peakAltitude,
+      altitudeUnit: state.isOpen ? "m" : "pct",
+      climbRate
     });
     const meta = state.sessionMeta || durationKindMeta();
     track("session_end", {
@@ -1117,7 +1288,11 @@
     const store = loadStore();
     const streak = computeStreak(store.history);
     els.complete.title.textContent = natural ? "Well held." : "A pause, then rest.";
-    els.complete.meta.textContent = `${minutes} min \u00b7 ${TYPES[state.type].label}`;
+    if (els.complete.held) els.complete.held.textContent = "Peak held.";
+    if (els.complete.summit) els.complete.summit.textContent = summitLine();
+    els.complete.meta.textContent = state.isOpen
+      ? `${minutes} min \u00b7 ${TYPES[state.type].label} \u00b7 open`
+      : `${minutes} min \u00b7 ${TYPES[state.type].label}`;
     els.complete.streak.textContent = streak >= 2
       ? `${runText(streak)} \u00b7 ${totalMinutes(store.history)} minutes all told.`
       : (store.history.length > 1
@@ -1136,6 +1311,7 @@
     );
     setView("home");
     resetToConfiguredTime();
+    paintIdleAltimeter();
   }
 
   function toggleMusic() {
@@ -1324,6 +1500,7 @@
     syncMusicButtons();
     syncSoundChoice();
     renderConfiguredTime();
+    paintIdleAltimeter();
     renderStats();
     bind();
     registerWorker();

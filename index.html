@@ -11,15 +11,15 @@
   <meta name="apple-mobile-web-app-title" content="Stillpoint">
   <title>Stillpoint — Raven Flock</title>
   <link rel="manifest" href="./manifest.json">
-  <link rel="icon" href="./favicon-32.png" type="image/png" sizes="32x32">
-  <link rel="icon" href="./icon.svg" type="image/svg+xml">
-  <link rel="icon" href="./icon-192.png" type="image/png" sizes="192x192">
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png" sizes="180x180">
+  <link rel="icon" href="./favicon-32.png?v=2" type="image/png" sizes="32x32">
+  <link rel="icon" href="./icon.svg?v=2" type="image/svg+xml">
+  <link rel="icon" href="./icon-192.png?v=2" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=2" sizes="180x180">
   <link rel="preload" href="./fonts/fraunces-latin-var.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="./style.css?v=30">
-  <link rel="stylesheet" href="./brand.css?v=30">
-  <link rel="stylesheet" href="./premium.css?v=30">
-  <link rel="stylesheet" href="./fonts.css?v=30">
+  <link rel="stylesheet" href="./style.css?v=32">
+  <link rel="stylesheet" href="./brand.css?v=32">
+  <link rel="stylesheet" href="./premium.css?v=32">
+  <link rel="stylesheet" href="./fonts.css?v=32">
 </head>
 <body>
   <a class="skip-link" href="#app">Skip to content</a>
@@ -123,13 +123,34 @@
       </section>
       <section id="view-session" class="view view-session" data-view="session" hidden>
         <p class="session-kicker" id="session-kicker">Timed sit</p>
+        <div class="instrument" id="altimeter">
+          <svg class="alt-svg" viewBox="0 0 240 240" aria-hidden="true">
+            <defs>
+              <radialGradient id="altGlass" cx="50%" cy="38%" r="72%">
+                <stop offset="0%" stop-color="rgba(240, 228, 196, 0.1)"/>
+                <stop offset="46%" stop-color="rgba(18, 22, 20, 0.08)"/>
+                <stop offset="100%" stop-color="rgba(5, 6, 5, 0.45)"/>
+              </radialGradient>
+            </defs>
+            <circle class="alt-bezel" cx="120" cy="120" r="116"/>
+            <circle class="alt-glass" cx="120" cy="120" r="108" fill="url(#altGlass)"/>
+            <circle class="alt-ring alt-ring-outer" cx="120" cy="120" r="102"/>
+            <circle class="alt-ring alt-ring-mid" cx="120" cy="120" r="88"/>
+            <circle class="alt-breath" cx="120" cy="120" r="74"/>
+            <g id="alt-ticks"></g>
+          </svg>
+          <div class="orb-stage">
+            <div class="orb-halo" aria-hidden="true"></div>
+            <div class="orb" id="orb" aria-hidden="true"><div class="orb-core"></div><div class="orb-ring"></div></div>
+          </div>
+          <div class="alt-needle" id="alt-needle" aria-hidden="true"></div>
+          <p class="alt-readout" aria-hidden="true"><span id="alt-value">0.0</span><span class="alt-unit" id="alt-unit">%</span></p>
+        </div>
+        <p class="sr-only" id="alt-live" aria-live="polite" aria-atomic="true"></p>
+        <p class="alt-trend is-steady" id="alt-trend" aria-hidden="true"><span class="alt-trend-mark"></span><span id="alt-trend-label">Steady</span></p>
+        <p class="phase" id="phase-label" aria-live="polite" aria-atomic="true">Settle</p>
         <p class="timer" id="timer-display" role="timer">10:00</p>
         <p class="sr-only" id="timer-live" aria-live="polite" aria-atomic="true"></p>
-        <div class="orb-stage">
-          <div class="orb-halo" aria-hidden="true"></div>
-          <div class="orb" id="orb" aria-hidden="true"><div class="orb-core"></div><div class="orb-ring"></div></div>
-        </div>
-        <p class="phase" id="phase-label" aria-live="polite" aria-atomic="true">Settle</p>
         <p class="session-hint" id="session-hint">Follow the light</p>
         <div class="session-sound-dock">
           <p class="session-sound-summary"><span id="session-sound-name">Soft</span></p>
@@ -155,12 +176,14 @@
       <section id="view-complete" class="view view-complete" data-view="complete" hidden>
         <p class="eyebrow">The sitting is complete</p>
         <h2 id="complete-title">Well held.</h2>
+        <p class="complete-held" id="complete-held">Peak held.</p>
+        <p class="complete-summit" id="complete-summit">Summit 0</p>
         <p class="complete-meta" id="complete-meta">10 minutes · Timed sit</p>
         <p class="complete-streak" id="complete-streak"></p>
         <button type="button" class="primary-btn" id="home-btn">Return home</button>
         <button type="button" class="text-btn share-btn" id="share-btn" hidden>Share Stillpoint</button>
         <p class="share-status" id="share-status" role="status" aria-live="polite"></p>
-        <script src="./share.js?v=30" defer></script>
+        <script src="./share.js?v=32" defer></script>
         <a class="text-btn tip-btn tip-btn-block" href="https://www.buymeacoffee.com/nrsteward" target="_blank" rel="noopener noreferrer">Leave a tip</a>
       </section>
     </main>
@@ -214,9 +237,9 @@
     </div>
   </div>
   <audio id="soundscape" src="./audio/stillpoint-sit.mp3" loop preload="none"></audio>
-  <script src="./sounds.js?v=30" defer></script>
-  <script src="./sw-update.js?v=30" defer></script>
-  <script src="./script.js?v=30" defer></script>
-  <script src="./premium.js?v=30" defer></script>
+  <script src="./sounds.js?v=32" defer></script>
+  <script src="./sw-update.js?v=32" defer></script>
+  <script src="./script.js?v=32" defer></script>
+  <script src="./premium.js?v=32" defer></script>
 </body>
 </html>
