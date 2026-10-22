@@ -6,7 +6,7 @@ Stillpoint has two kinds of file beds: **original music** by Raven Flock (the So
 
 ## Originals — Raven Flock, made in Aerie
 
-The three Soft beds are original compositions written for Stillpoint in [Aerie](https://github.com/dust2ash7/Aerie) and rendered by Aerie's own audio engine. No samples, loops, or free-licensed material are used. The Aerie project files are in [`source/`](./source/).
+The three Soft beds are original compositions written for Stillpoint in [Aerie](https://github.com/Raven-Flock/Aerie) and rendered by Aerie's own audio engine. No samples, loops, or free-licensed material are used. The Aerie project files are in [`source/`](./source/).
 
 | File | Title (ID3) | Practice | Loop | Key / mode | Project |
 |------|-------------|----------|------|------------|---------|

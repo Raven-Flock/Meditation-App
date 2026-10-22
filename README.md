@@ -10,7 +10,7 @@
 
 A quiet meditation PWA from **Raven Flock**. Timed sits, box breathing (4-4-4-4), and a 4-7-8 wind-down. No accounts. Tips optional.
 
-**Live:** [web](https://dust2ash7.github.io/Meditation-App/) · [itch.io](https://dust2ash7.itch.io/stillpoint)
+**Live:** [web](https://raven-flock.github.io/Meditation-App/) · [itch.io](https://dust2ash7.itch.io/stillpoint)
 
 Tip jar: [buymeacoffee.com/nrsteward](https://www.buymeacoffee.com/nrsteward)
 

@@ -2,7 +2,7 @@
 (() => {
   "use strict";
 
-  const URL_ = "https://dust2ash7.github.io/Meditation-App/";
+  const URL_ = "https://raven-flock.github.io/Meditation-App/";
   const TEXT = "Stillpoint, a quiet place to sit. Raven Flock — Consider the ravens.";
 
   function track(method) {
