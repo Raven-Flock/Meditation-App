@@ -8,7 +8,7 @@ Licenses and source URLs: [`CREDITS.md`](./CREDITS.md).
 
 | Path | Mode |
 |------|------|
-| `audio/stillpoint-sit.mp3` | Timed sit |
+| `audio/stillpoint-sit.mp3` | Timed sit ("Tend", Aerie original, ~27.8 s loop) |
 | `audio/stillpoint-box.mp3` | Box breathing |
 | `audio/stillpoint-wind.mp3` | Wind-down |
 

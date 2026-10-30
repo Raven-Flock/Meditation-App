@@ -10,15 +10,15 @@ The three Soft beds are original compositions written for Stillpoint in [Aerie](
 
 | File | Title (ID3) | Practice | Loop | Key / mode | Project |
 |------|-------------|----------|------|------------|---------|
-| `stillpoint-sit.mp3` | Stillpoint Sit | Timed sit (4 in / 6 out) | 60 s (6 breath cycles) | D major pentatonic | `source/stillpoint-sit.aerie.json` |
+| `stillpoint-sit.mp3` | Stillpoint Sit | Timed sit | ~27.83 s (32 beats @ 69 BPM, "Tend") | C major | `source/stillpoint-sit.aerie.json` |
 | `stillpoint-box.mp3` | Stillpoint Box | Box breathing (4-4-4-4) | 64 s (4 squares) | A minor (Aeolian) | `source/stillpoint-box.aerie.json` |
 | `stillpoint-wind.mp3` | Stillpoint Wind-down | Wind-down (4-7-8) | 76 s (4 cycles) | E♭ major, low register | `source/stillpoint-wind.aerie.json` |
 
 - **Artist:** Raven Flock. Composition in Aerie: Raven Flock Sound Design. Calm target cards, loudness spec and measurements: Raven Flock Brain Researcher.
-- **Render:** Aerie offline `renderWav` (44.1 kHz, 16-bit, stereo), exported at 3× the loop length; the middle repetition is cut sample-exact so reverb tails wrap into the loop start. Sit and Wind-down use a 500 ms crossfade built only from Aerie output to smooth the seam.
-- **Loudness:** two-pass `loudnorm` (linear gain only), −16 LUFS integrated, true peak ≤ −3.5 dBTP, LRA 1.2–2.6 LU. Seam head/tail within ±1.5 dB of the loop body.
+- **Render:** Aerie offline `renderWav` (44.1 kHz, 16-bit, stereo), exported at 3× the loop length; the middle repetition is cut sample-exact so reverb tails wrap into the loop start. Sit and Wind-down use a 500 ms crossfade built only from Aerie output to smooth the seam. Sit (Tend, Aerie main `4eb58974`) is a sample-exact wrap from Aerie #2 (1,227,130 samples) and needs no crossfade; Wind-down keeps its 500 ms crossfade.
+- **Loudness:** two-pass `loudnorm` (linear gain only), −16 LUFS integrated, true peak ≤ −3.5 dBTP, LRA 1.2–2.6 LU. Seam head/tail within ±1.5 dB of the loop body. Sit's peaks are caught by a transparent limiter before the linear loudnorm. Its LRA is ~17 LU because Tend is sparser.
 - **Encode:** MP3 128 kbps CBR, 44.1 kHz, joint stereo. Tags: `artist=Raven Flock`, `title=Stillpoint <Bed>`, `comment=Original composition (Aerie). Consider the ravens.`
-- Pulse-free on a 60 BPM grid; loop lengths are whole multiples of each practice's breath cycle. These are design choices, not health claims.
+- Box/Wind are pulse-free on a 60 BPM grid; Sit (Tend) is at 69 BPM, a slow 32-beat loop. These are design choices, not health claims.
 
 ---
 
@@ -76,7 +76,7 @@ The Soft beds used these CC0 tracks from OpenGameArt until the Aerie originals r
 
 | File | Track | Author | Source |
 |------|-------|--------|--------|
-| `stillpoint-sit.mp3` | First Light Particles | Yoiyami | https://opengameart.org/content/first-light-particles-%E2%80%93-cc0-atmospheric-pianoambient-track |
+| `stillpoint-sit.mp3` | First Light Particles (retired; sit is now Raven Flock 'Tend') | Yoiyami | https://opengameart.org/content/first-light-particles-%E2%80%93-cc0-atmospheric-pianoambient-track |
 | `stillpoint-box.mp3` | The Budding of Consciousness (Yoiyami Blue Series No. 4) | Yoiyami | https://opengameart.org/content/the-budding-of-consciousness-%E2%80%93-cc0-ambient-minimalist-theme-yoiyami-blue-series-%E2%80%93-no4 |
 | `stillpoint-wind.mp3` | Cosmic Navigation (loop) | Synth-thetic | https://opengameart.org/content/cosmic-navigation |
 

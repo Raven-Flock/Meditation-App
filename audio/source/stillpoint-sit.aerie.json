@@ -1,81 +1,113 @@
 {
  "v": 1,
- "songId": "songsit01",
  "title": "Stillpoint Sit",
- "bpm": 60,
+ "bpm": 69,
  "timeSig": 4,
- "key": "D",
+ "key": "C",
  "scale": "major",
- "bars": 45,
+ "bars": 8,
  "swing": 0,
- "snap": "1/4",
- "loop": null,
- "follow": true,
  "tone": "quiet",
- "lyrics": "",
- "sections": [],
- "scenes": [],
+ "loop": {
+  "start": 0,
+  "end": 32
+ },
  "tracks": [
   {
-   "id": "trk011",
-   "name": "Bowed drone",
+   "id": "trk34t2",
+   "name": "Pad",
    "kind": "keys",
-   "preset": "pad_bow",
+   "preset": "pad_choir",
    "tint": "sage",
-   "volume": 0.6,
+   "volume": 0.62,
    "pan": 0,
    "mute": false,
    "solo": false,
    "eqLow": 0,
-   "eqHigh": -6,
-   "reverb": "trail",
+   "eqHigh": 0,
+   "reverb": "shelf",
    "delay": false,
    "knobs": [
-    0.15,
-    0.0,
+    0.5,
+    0.5,
     0.5
    ],
-   "lane": [],
-   "laneOn": false
+   "lane": [
+    {
+     "t": 0,
+     "v": 0.55
+    },
+    {
+     "t": 16,
+     "v": 0.92
+    },
+    {
+     "t": 28,
+     "v": 0.7
+    }
+   ],
+   "laneOn": true
   },
   {
-   "id": "trk012",
-   "name": "Ensemble hold",
+   "id": "trk359w",
+   "name": "Keys",
    "kind": "keys",
-   "preset": "strings_ens",
+   "preset": "ep",
    "tint": "clay",
-   "volume": 0.95,
+   "volume": 0.55,
    "pan": 0,
    "mute": false,
    "solo": false,
    "eqLow": 0,
-   "eqHigh": -6,
-   "reverb": "trail",
+   "eqHigh": 0,
+   "reverb": "shelf",
    "delay": false,
    "knobs": [
-    0.2,
-    0.4444,
+    0.5,
+    0.5,
     0.5
    ],
    "lane": [],
    "laneOn": false
   },
   {
-   "id": "trk013",
-   "name": "Far mallet",
-   "kind": "lead",
-   "preset": "mallet",
+   "id": "trk36w6",
+   "name": "Sparks",
+   "kind": "keys",
+   "preset": "piano",
    "tint": "slate",
-   "volume": 0.35,
+   "volume": 0.42,
    "pan": 0,
    "mute": false,
    "solo": false,
    "eqLow": 0,
-   "eqHigh": -6,
-   "reverb": "trail",
+   "eqHigh": 0,
+   "reverb": "small",
    "delay": false,
    "knobs": [
-    0.2,
+    0.5,
+    0.5,
+    0.5
+   ],
+   "lane": [],
+   "laneOn": false
+  },
+  {
+   "id": "trk37un",
+   "name": "Pedal",
+   "kind": "bass",
+   "preset": "sub",
+   "tint": "stone",
+   "volume": 0.48,
+   "pan": 0,
+   "mute": false,
+   "solo": false,
+   "eqLow": 0,
+   "eqHigh": 0,
+   "reverb": "off",
+   "delay": false,
+   "knobs": [
+    0.5,
     0.5,
     0.5
    ],
@@ -85,139 +117,97 @@
  ],
  "clips": [
   {
-   "id": "clip011",
-   "trackId": "trk011",
-   "name": "Bowed drone",
+   "id": "clip44fp",
+   "trackId": "trk34t2",
+   "name": "Pad hold",
    "start": 0,
-   "length": 180,
-   "content": 60,
+   "length": 32,
+   "content": 32,
    "loop": true,
    "notes": [
     {
-     "id": "n01001",
-     "pitch": 52,
-     "start": 0.25,
-     "duration": 160.0,
-     "velocity": 0.3
+     "id": "n38tc",
+     "pitch": 60,
+     "start": 0,
+     "duration": 7.5,
+     "velocity": 0.42
     },
     {
-     "id": "n01002",
-     "pitch": 38,
-     "start": 3.0,
-     "duration": 160.0,
+     "id": "n3991",
+     "pitch": 67,
+     "start": 0,
+     "duration": 7.5,
+     "velocity": 0.42
+    },
+    {
+     "id": "n3ayz",
+     "pitch": 72,
+     "start": 0,
+     "duration": 7.5,
+     "velocity": 0.42
+    },
+    {
+     "id": "n3bik",
+     "pitch": 57,
+     "start": 8,
+     "duration": 7.5,
      "velocity": 0.4
     },
     {
-     "id": "n01003",
-     "pitch": 45,
-     "start": 6.5,
-     "duration": 160.0,
-     "velocity": 0.36
-    },
-    {
-     "id": "n01004",
-     "pitch": 52,
-     "start": 9.75,
-     "duration": 160.0,
-     "velocity": 0.3
-    },
-    {
-     "id": "n01005",
-     "pitch": 38,
-     "start": 12.5,
-     "duration": 160.0,
+     "id": "n3cc7",
+     "pitch": 64,
+     "start": 8,
+     "duration": 7.5,
      "velocity": 0.4
     },
     {
-     "id": "n01006",
-     "pitch": 45,
-     "start": 16.75,
-     "duration": 160.0,
-     "velocity": 0.36
-    },
-    {
-     "id": "n01007",
-     "pitch": 52,
-     "start": 18.25,
-     "duration": 160.0,
-     "velocity": 0.3
-    },
-    {
-     "id": "n01008",
-     "pitch": 38,
-     "start": 23.5,
-     "duration": 160.0,
+     "id": "n3dv5",
+     "pitch": 69,
+     "start": 8,
+     "duration": 7.5,
      "velocity": 0.4
     },
     {
-     "id": "n01009",
-     "pitch": 45,
-     "start": 27.0,
-     "duration": 160.0,
-     "velocity": 0.36
+     "id": "n3e6f",
+     "pitch": 53,
+     "start": 16,
+     "duration": 7.5,
+     "velocity": 0.38
     },
     {
-     "id": "n01010",
-     "pitch": 52,
-     "start": 29.75,
-     "duration": 160.0,
-     "velocity": 0.3
+     "id": "n3f81",
+     "pitch": 60,
+     "start": 16,
+     "duration": 7.5,
+     "velocity": 0.38
     },
     {
-     "id": "n01011",
-     "pitch": 38,
-     "start": 33.0,
-     "duration": 160.0,
+     "id": "n3gql",
+     "pitch": 67,
+     "start": 16,
+     "duration": 7.5,
+     "velocity": 0.38
+    },
+    {
+     "id": "n3hi6",
+     "pitch": 55,
+     "start": 24,
+     "duration": 7.5,
      "velocity": 0.4
     },
     {
-     "id": "n01012",
-     "pitch": 45,
-     "start": 37.5,
-     "duration": 160.0,
-     "velocity": 0.36
-    },
-    {
-     "id": "n01013",
-     "pitch": 52,
-     "start": 38.75,
-     "duration": 160.0,
-     "velocity": 0.3
-    },
-    {
-     "id": "n01014",
-     "pitch": 38,
-     "start": 43.5,
-     "duration": 160.0,
+     "id": "n3ih1",
+     "pitch": 62,
+     "start": 24,
+     "duration": 7.5,
      "velocity": 0.4
     },
     {
-     "id": "n01015",
-     "pitch": 45,
-     "start": 47.5,
-     "duration": 160.0,
-     "velocity": 0.36
-    },
-    {
-     "id": "n01016",
-     "pitch": 52,
-     "start": 49.25,
-     "duration": 160.0,
-     "velocity": 0.3
-    },
-    {
-     "id": "n01017",
-     "pitch": 38,
-     "start": 55.0,
-     "duration": 160.0,
+     "id": "n3jf2",
+     "pitch": 67,
+     "start": 24,
+     "duration": 7.5,
      "velocity": 0.4
-    },
-    {
-     "id": "n01018",
-     "pitch": 45,
-     "start": 56.25,
-     "duration": 160.0,
-     "velocity": 0.36
     }
    ],
    "mute": false,
@@ -225,219 +215,100 @@
    "fadeOut": 0,
    "active": true,
    "clipKind": "midi",
-   "articulation": "soft"
+   "articulation": "legato"
   },
   {
-   "id": "clip012",
-   "trackId": "trk012",
-   "name": "Ensemble hold",
+   "id": "clip453l",
+   "trackId": "trk359w",
+   "name": "Soft chords",
    "start": 0,
-   "length": 180,
-   "content": 60,
+   "length": 32,
+   "content": 32,
    "loop": true,
    "notes": [
     {
-     "id": "n01019",
-     "pitch": 66,
-     "start": 2.0,
-     "duration": 52.003,
-     "velocity": 0.26
+     "id": "n3k7b",
+     "pitch": 60,
+     "start": 0,
+     "duration": 3.5,
+     "velocity": 0.5
     },
     {
-     "id": "n01020",
-     "pitch": 57,
-     "start": 3.25,
-     "duration": 52.003,
-     "velocity": 0.3
-    },
-    {
-     "id": "n01021",
-     "pitch": 62,
-     "start": 6.5,
-     "duration": 52.003,
-     "velocity": 0.3
-    },
-    {
-     "id": "n01022",
+     "id": "n3lnl",
      "pitch": 64,
-     "start": 8.75,
-     "duration": 52.003,
-     "velocity": 0.28
+     "start": 0,
+     "duration": 3.5,
+     "velocity": 0.5
     },
     {
-     "id": "n01023",
-     "pitch": 66,
-     "start": 11.0,
-     "duration": 52.003,
-     "velocity": 0.26
+     "id": "n3mch",
+     "pitch": 67,
+     "start": 0,
+     "duration": 3.5,
+     "velocity": 0.5
     },
     {
-     "id": "n01024",
+     "id": "n3nm9",
      "pitch": 57,
-     "start": 12.0,
-     "duration": 52.003,
-     "velocity": 0.3
+     "start": 8,
+     "duration": 3.5,
+     "velocity": 0.48
     },
     {
-     "id": "n01025",
-     "pitch": 62,
-     "start": 15.25,
-     "duration": 52.003,
-     "velocity": 0.3
+     "id": "n3oks",
+     "pitch": 60,
+     "start": 8,
+     "duration": 3.5,
+     "velocity": 0.48
     },
     {
-     "id": "n01026",
+     "id": "n3pq5",
      "pitch": 64,
-     "start": 16.5,
-     "duration": 52.003,
-     "velocity": 0.28
+     "start": 8,
+     "duration": 3.5,
+     "velocity": 0.48
     },
     {
-     "id": "n01027",
-     "pitch": 55,
-     "start": 20.0,
-     "duration": 52.003,
-     "velocity": 0.3
+     "id": "n3q69",
+     "pitch": 53,
+     "start": 16,
+     "duration": 3.5,
+     "velocity": 0.46
     },
     {
-     "id": "n01028",
-     "pitch": 59,
-     "start": 20.25,
-     "duration": 52.003,
-     "velocity": 0.3
-    },
-    {
-     "id": "n01029",
-     "pitch": 62,
-     "start": 20.5,
-     "duration": 52.003,
-     "velocity": 0.28
-    },
-    {
-     "id": "n01030",
-     "pitch": 69,
-     "start": 21.0,
-     "duration": 52.003,
-     "velocity": 0.26
-    },
-    {
-     "id": "n01031",
-     "pitch": 55,
-     "start": 28.25,
-     "duration": 52.003,
-     "velocity": 0.3
-    },
-    {
-     "id": "n01032",
-     "pitch": 59,
-     "start": 29.0,
-     "duration": 52.003,
-     "velocity": 0.3
-    },
-    {
-     "id": "n01033",
-     "pitch": 62,
-     "start": 30.75,
-     "duration": 52.003,
-     "velocity": 0.28
-    },
-    {
-     "id": "n01034",
-     "pitch": 69,
-     "start": 31.5,
-     "duration": 52.003,
-     "velocity": 0.26
-    },
-    {
-     "id": "n01035",
-     "pitch": 55,
-     "start": 35.5,
-     "duration": 52.003,
-     "velocity": 0.3
-    },
-    {
-     "id": "n01036",
-     "pitch": 59,
-     "start": 37.75,
-     "duration": 52.003,
-     "velocity": 0.3
-    },
-    {
-     "id": "n01037",
+     "id": "n3rfv",
      "pitch": 57,
-     "start": 40.25,
-     "duration": 52.003,
-     "velocity": 0.3
+     "start": 16,
+     "duration": 3.5,
+     "velocity": 0.46
     },
     {
-     "id": "n01038",
-     "pitch": 66,
-     "start": 40.5,
-     "duration": 52.003,
-     "velocity": 0.28
+     "id": "n3shz",
+     "pitch": 60,
+     "start": 16,
+     "duration": 3.5,
+     "velocity": 0.46
     },
     {
-     "id": "n01039",
-     "pitch": 69,
-     "start": 42.0,
-     "duration": 52.003,
-     "velocity": 0.26
+     "id": "n3tiu",
+     "pitch": 55,
+     "start": 24,
+     "duration": 3.5,
+     "velocity": 0.48
     },
     {
-     "id": "n01040",
+     "id": "n3u1t",
      "pitch": 59,
-     "start": 46.5,
-     "duration": 18.001,
-     "velocity": 0.3
+     "start": 24,
+     "duration": 3.5,
+     "velocity": 0.48
     },
     {
-     "id": "n01041",
-     "pitch": 66,
-     "start": 48.25,
-     "duration": 52.003,
-     "velocity": 0.28
-    },
-    {
-     "id": "n01042",
-     "pitch": 57,
-     "start": 48.5,
-     "duration": 52.003,
-     "velocity": 0.3
-    },
-    {
-     "id": "n01043",
-     "pitch": 69,
-     "start": 50.0,
-     "duration": 20.001,
-     "velocity": 0.26
-    },
-    {
-     "id": "n01044",
-     "pitch": 66,
-     "start": 52.75,
-     "duration": 52.003,
-     "velocity": 0.28
-    },
-    {
-     "id": "n01045",
+     "id": "n3vv8",
      "pitch": 62,
-     "start": 56.0,
-     "duration": 52.003,
-     "velocity": 0.3
-    },
-    {
-     "id": "n01046",
-     "pitch": 66,
-     "start": 56.25,
-     "duration": 52.003,
-     "velocity": 0.26
-    },
-    {
-     "id": "n01047",
-     "pitch": 64,
-     "start": 56.5,
-     "duration": 52.003,
-     "velocity": 0.28
+     "start": 24,
+     "duration": 3.5,
+     "velocity": 0.48
     }
    ],
    "mute": false,
@@ -445,51 +316,89 @@
    "fadeOut": 0,
    "active": true,
    "clipKind": "midi",
-   "articulation": "soft"
+   "articulation": "legato"
   },
   {
-   "id": "clip013",
-   "trackId": "trk013",
-   "name": "Far mallet",
+   "id": "clip46qx",
+   "trackId": "trk36w6",
+   "name": "Sparks",
    "start": 0,
-   "length": 180,
-   "content": 60,
+   "length": 32,
+   "content": 32,
    "loop": true,
    "notes": [
     {
-     "id": "n01048",
-     "pitch": 76,
-     "start": 4.5,
-     "duration": 2.791,
-     "velocity": 0.26
+     "id": "n3w8q",
+     "pitch": 72,
+     "start": 4,
+     "duration": 0.75,
+     "velocity": 0.38
     },
     {
-     "id": "n01049",
-     "pitch": 69,
-     "start": 16.0,
-     "duration": 2.791,
-     "velocity": 0.25
-    },
-    {
-     "id": "n01050",
+     "id": "n3xeq",
      "pitch": 74,
-     "start": 27.5,
-     "duration": 2.791,
-     "velocity": 0.26
+     "start": 12.5,
+     "duration": 0.6,
+     "velocity": 0.34
     },
     {
-     "id": "n01051",
+     "id": "n3yf0",
      "pitch": 71,
-     "start": 39.0,
-     "duration": 2.791,
-     "velocity": 0.25
+     "start": 20,
+     "duration": 0.8,
+     "velocity": 0.36
     },
     {
-     "id": "n01052",
-     "pitch": 78,
-     "start": 50.0,
-     "duration": 2.791,
-     "velocity": 0.25
+     "id": "n3zji",
+     "pitch": 67,
+     "start": 28.5,
+     "duration": 1,
+     "velocity": 0.32
+    }
+   ],
+   "mute": false,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "active": true,
+   "clipKind": "midi",
+   "articulation": "legato"
+  },
+  {
+   "id": "clip476e",
+   "trackId": "trk37un",
+   "name": "Pedal",
+   "start": 0,
+   "length": 32,
+   "content": 32,
+   "loop": true,
+   "notes": [
+    {
+     "id": "n40bx",
+     "pitch": 36,
+     "start": 0,
+     "duration": 7.5,
+     "velocity": 0.55
+    },
+    {
+     "id": "n41q9",
+     "pitch": 33,
+     "start": 8,
+     "duration": 7.5,
+     "velocity": 0.5
+    },
+    {
+     "id": "n42m3",
+     "pitch": 29,
+     "start": 16,
+     "duration": 7.5,
+     "velocity": 0.48
+    },
+    {
+     "id": "n43sw",
+     "pitch": 31,
+     "start": 24,
+     "duration": 7.5,
+     "velocity": 0.5
     }
    ],
    "mute": false,
@@ -500,5 +409,11 @@
    "articulation": "legato"
   }
  ],
- "updatedAt": 1790800000000
+ "songId": "song486j",
+ "snap": "1/16",
+ "follow": true,
+ "lyrics": "",
+ "sections": [],
+ "scenes": [],
+ "updatedAt": 1793363222036
 }
